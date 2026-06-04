@@ -8,6 +8,7 @@ def write_file(path, content):
 base_alert = r"d:\project\Real Time Fraud Detection Microservices Architecture\services\alert-service"
 base_case = r"d:\project\Real Time Fraud Detection Microservices Architecture\services\case-management"
 
+
 # ALERT SERVICE
 
 write_file(f'{base_alert}/Dockerfile', """
@@ -267,7 +268,9 @@ def health():
     return {"status": "ok", "service": "alert-service"}
 """)
 
+# ---------------------------------------------------------
 # CASE MANAGEMENT SERVICE
+# ---------------------------------------------------------
 
 write_file(f'{base_case}/Dockerfile', """
 FROM python:3.11-slim
