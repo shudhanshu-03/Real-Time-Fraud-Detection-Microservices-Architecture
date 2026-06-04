@@ -1,8 +1,9 @@
 import logging
 from neo4j import GraphDatabase
-from typing import Dict, Any, List
+from typing import Dict, List
 
 logger = logging.getLogger(__name__)
+
 
 class Neo4jClient:
     def __init__(self, uri: str, user: str, password: str):
@@ -11,7 +12,9 @@ class Neo4jClient:
     def close(self):
         self.driver.close()
 
-    def add_transaction_to_graph(self, tx_id: str, card: str, merchant: str, device: str, ip: str, amount: float, timestamp: str):
+    def add_transaction_to_graph(
+        self, tx_id: str, card: str, merchant: str, device: str, ip: str, amount: float, timestamp: str
+    ):
         query = """
         // Ensure nodes exist
         MERGE (c:Card {id: $card})
@@ -31,7 +34,16 @@ class Neo4jClient:
         }]->(m)
         """
         with self.driver.session() as session:
-            session.run(query, tx_id=tx_id, card=card, merchant=merchant, device=device, ip=ip, amount=amount, timestamp=timestamp)
+            session.run(
+                query,
+                tx_id=tx_id,
+                card=card,
+                merchant=merchant,
+                device=device,
+                ip=ip,
+                amount=amount,
+                timestamp=timestamp,
+            )
             logger.info(f"Added transaction {tx_id} to graph")
 
     def check_device_sharing(self, device: str) -> List[str]:

@@ -75,9 +75,7 @@ class ScoreAggregator:
         }
         for name, value in scores.items():
             if not (0.0 <= value <= 1.0):
-                raise ValueError(
-                    f"{name} must be between 0.0 and 1.0, got {value}"
-                )
+                raise ValueError(f"{name} must be between 0.0 and 1.0, got {value}")
 
         # --- Validate weight sum ---
         weight_sum = weights.total

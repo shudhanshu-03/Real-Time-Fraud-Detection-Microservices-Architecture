@@ -1,6 +1,7 @@
 """
 Customer Profile Main Application
 """
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -27,16 +28,19 @@ dashboard_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "dashbo
 os.makedirs(dashboard_dir, exist_ok=True)
 app.mount("/dashboard", StaticFiles(directory=dashboard_dir, html=True), name="dashboard")
 
+
 @app.on_event("startup")
 async def startup_event():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-        
+
     await consumer_service.start()
+
 
 @app.on_event("shutdown")
 async def shutdown_event():
     await consumer_service.stop()
+
 
 @app.get("/health")
 def health():

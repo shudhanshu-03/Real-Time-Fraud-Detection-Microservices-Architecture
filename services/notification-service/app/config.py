@@ -1,8 +1,10 @@
 """
 Notification Service Config
 """
+
 from pydantic_settings import BaseSettings
 from pydantic import Field
+
 
 class NotificationSettings(BaseSettings):
     service_name: str = Field(default="notification-service")
@@ -22,7 +24,7 @@ class NotificationSettings(BaseSettings):
     smtp_user: str = Field(default="notify@example.com")
     smtp_pass: str = Field(default="secret")
     smtp_from: str = Field(default="alerts@fraudplatform.com")
-    
+
     # Twilio
     twilio_account_sid: str = Field(default="AC_dummy")
     twilio_auth_token: str = Field(default="dummy")
@@ -36,5 +38,6 @@ class NotificationSettings(BaseSettings):
         "case_sensitive": False,
         "extra": "ignore",
     }
+
 
 settings = NotificationSettings()

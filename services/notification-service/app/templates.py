@@ -20,39 +20,22 @@ EMAIL_TEMPLATE = """
 
 SMS_TEMPLATE = "FRAUD ALERT: Suspicious transaction {transaction_id} for {amount} at {merchant}. Reply YES if valid, NO if unauthorized."
 
+
 def get_slack_blocks(alert_id: str, severity: str, amount: str, merchant: str, risk_score: str):
     return [
+        {"type": "header", "text": {"type": "plain_text", "text": f"🚨 Fraud Alert ({severity})"}},
         {
-            "type": "header",
-            "text": {
-                "type": "plain_text",
-                "text": f"🚨 Fraud Alert ({severity})"
-            }
+            "type": "section",
+            "fields": [
+                {"type": "mrkdwn", "text": f"*Alert ID:*\n{alert_id}"},
+                {"type": "mrkdwn", "text": f"*Risk Score:*\n{risk_score}"},
+            ],
         },
         {
             "type": "section",
             "fields": [
-                {
-                    "type": "mrkdwn",
-                    "text": f"*Alert ID:*\n{alert_id}"
-                },
-                {
-                    "type": "mrkdwn",
-                    "text": f"*Risk Score:*\n{risk_score}"
-                }
-            ]
+                {"type": "mrkdwn", "text": f"*Amount:*\n{amount}"},
+                {"type": "mrkdwn", "text": f"*Merchant:*\n{merchant}"},
+            ],
         },
-        {
-            "type": "section",
-            "fields": [
-                {
-                    "type": "mrkdwn",
-                    "text": f"*Amount:*\n{amount}"
-                },
-                {
-                    "type": "mrkdwn",
-                    "text": f"*Merchant:*\n{merchant}"
-                }
-            ]
-        }
     ]

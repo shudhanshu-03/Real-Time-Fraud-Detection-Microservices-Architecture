@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings
 
+
 class Settings(BaseSettings):
     APP_NAME: str = "alert-service"
     PG_USER: str = "fraud_user"
@@ -11,9 +12,10 @@ class Settings(BaseSettings):
     ALERT_TOPIC: str = "alert.created"
     CASE_TOPIC: str = "case.opened"
     NOTIFY_TOPIC: str = "notification.requested"
-    
+
     @property
     def database_url(self) -> str:
         return f"postgresql+asyncpg://{self.PG_USER}:{self.PG_PASSWORD}@{self.PG_HOST}:{self.PG_PORT}/{self.PG_DB}"
+
 
 settings = Settings()

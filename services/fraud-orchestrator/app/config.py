@@ -116,13 +116,9 @@ class OrchestratorSettings(BaseSettings):
         default="kafka:29092",
         description="Comma-separated list of Kafka bootstrap servers",
     )
-    input_topic: str = Field(
-        default="transactions",
-        description="Kafka topic to consume incoming transactions from"
-    )
+    input_topic: str = Field(default="transactions", description="Kafka topic to consume incoming transactions from")
     output_topic: str = Field(
-        default="fraud.evaluated.transactions",
-        description="Kafka topic to publish evaluated transactions to"
+        default="fraud.evaluated.transactions", description="Kafka topic to publish evaluated transactions to"
     )
 
     # -------------------------------------------------------------------------

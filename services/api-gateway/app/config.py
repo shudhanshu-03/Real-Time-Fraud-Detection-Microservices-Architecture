@@ -38,7 +38,7 @@ class Settings(BaseSettings):
     redis_port: int = 6379
     redis_db: int = 0
     kafka_bootstrap_servers: str = "kafka:29092"
-    
+
     # Optional services ──────────────────────────────────────────────────
     proxy_timeout_seconds: float = 30.0
     circuit_breaker_failure_threshold: int = 5

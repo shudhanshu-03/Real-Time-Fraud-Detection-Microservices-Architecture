@@ -6,7 +6,8 @@ import grpc
 
 try:
     import fraud_common
-    sys.path.append(os.path.join(os.path.dirname(fraud_common.__file__), 'pb'))
+
+    sys.path.append(os.path.join(os.path.dirname(fraud_common.__file__), "pb"))
 except ImportError:
     pass
 
@@ -16,6 +17,7 @@ from app.neo4j_client import Neo4jClient
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
+
 
 def serve():
     port = os.getenv("GRPC_PORT", "50053")
@@ -28,20 +30,21 @@ def serve():
 
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     graph_service = GraphAnalysisService(neo4j_client)
-    
+
     graph_analysis_pb2_grpc.add_GraphAnalysisServiceServicer_to_server(graph_service, server)
-    
+
     server.add_insecure_port(f"[::]:{port}")
     server.start()
-    
+
     logger.info(f"Graph Analysis Service started on port {port}")
-    
+
     try:
         server.wait_for_termination()
     except KeyboardInterrupt:
         logger.info("Shutting down...")
         neo4j_client.close()
         server.stop(0)
+
 
 if __name__ == "__main__":
     serve()

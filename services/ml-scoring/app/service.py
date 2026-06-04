@@ -9,6 +9,7 @@ from app.model_engine import MockModelEngine
 
 logger = logging.getLogger(__name__)
 
+
 class MLScoringServiceServicer(ml_scoring_pb2_grpc.MLScoringServiceServicer):
     def __init__(self):
         self.model_engine = MockModelEngine()
@@ -16,26 +17,28 @@ class MLScoringServiceServicer(ml_scoring_pb2_grpc.MLScoringServiceServicer):
 
     async def PredictFraud(self, request, context):
         start_time = time.perf_counter()
-        
+
         try:
             # Perform inference using the mock model engine
             prediction = self.model_engine.predict(request)
-            
+
             end_time = time.perf_counter()
             prediction_time_ms = (end_time - start_time) * 1000
-            
+
             result = ml_scoring_pb2.PredictionResult(
                 ml_score=prediction["score"],
                 anomaly_flags=prediction["flags"],
                 model_version=prediction["model_version"],
                 confidence=prediction["confidence"],
                 prediction_time_ms=prediction_time_ms,
-                feature_importances=prediction.get("feature_importances", {})
+                feature_importances=prediction.get("feature_importances", {}),
             )
-            
-            logger.info(f"Scored transaction {request.transaction_id} -> {prediction['score']:.4f} in {prediction_time_ms:.2f}ms")
+
+            logger.info(
+                f"Scored transaction {request.transaction_id} -> {prediction['score']:.4f} in {prediction_time_ms:.2f}ms"
+            )
             return result
-            
+
         except Exception as e:
             logger.error(f"Error predicting fraud for {request.transaction_id}: {str(e)}")
             context.set_code(grpc.StatusCode.INTERNAL)
@@ -54,7 +57,7 @@ class MLScoringServiceServicer(ml_scoring_pb2_grpc.MLScoringServiceServicer):
             last_trained="2026-05-30T00:00:00Z",
             status="ACTIVE",
             traffic_percentage=100.0,
-            total_predictions=1337
+            total_predictions=1337,
         )
 
     async def GetMLHealth(self, request, context):
@@ -67,5 +70,5 @@ class MLScoringServiceServicer(ml_scoring_pb2_grpc.MLScoringServiceServicer):
             timestamp=now,
             loaded_models=1,
             gpu_utilization=0.0,
-            avg_inference_latency_ms=12.5
+            avg_inference_latency_ms=12.5,
         )

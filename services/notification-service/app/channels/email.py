@@ -1,12 +1,13 @@
 """
 Email Channel
 """
+
 import structlog
-import aiosmtplib
 from email.message import EmailMessage
 from app.config import settings
 
 logger = structlog.get_logger(__name__)
+
 
 class EmailChannel:
     @staticmethod

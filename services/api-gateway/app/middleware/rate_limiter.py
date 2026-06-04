@@ -110,9 +110,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     available, otherwise it falls back to the remote IP address.
     """
 
-    async def dispatch(
-        self, request: Request, call_next: RequestResponseEndpoint
-    ) -> Response:
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         """Apply rate limiting before forwarding the request."""
 
         # Skip rate limiting for health and metrics endpoints
@@ -122,9 +120,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         client_id = self._extract_client_id(request)
 
         # Obtain the rate limiter from app state (set during lifespan)
-        rate_limiter: RateLimiter | None = getattr(
-            request.app.state, "rate_limiter", None
-        )
+        rate_limiter: RateLimiter | None = getattr(request.app.state, "rate_limiter", None)
 
         if rate_limiter is not None:
             allowed, remaining, retry_after = await rate_limiter.check_rate_limit(

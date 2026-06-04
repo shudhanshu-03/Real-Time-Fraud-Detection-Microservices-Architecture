@@ -7,6 +7,7 @@ from app.models.alert import Alert
 
 router = APIRouter()
 
+
 @router.get("/alerts", response_model=List[Dict[str, Any]])
 async def list_alerts(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Alert).limit(100))
@@ -18,10 +19,12 @@ async def list_alerts(db: AsyncSession = Depends(get_db)):
             "customer_id": a.customer_id,
             "score": a.score,
             "status": a.status,
-            "created_at": a.created_at
-        } for a in alerts
+            "created_at": a.created_at,
+        }
+        for a in alerts
     ]
-    
+
+
 @router.get("/alerts/{alert_id}")
 async def get_alert(alert_id: str, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Alert).filter(Alert.alert_id == alert_id))
@@ -35,5 +38,5 @@ async def get_alert(alert_id: str, db: AsyncSession = Depends(get_db)):
         "score": alert.score,
         "status": alert.status,
         "reason": alert.reason,
-        "created_at": alert.created_at
+        "created_at": alert.created_at,
     }

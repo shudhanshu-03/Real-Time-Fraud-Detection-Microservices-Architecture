@@ -6,7 +6,8 @@ import os
 # Ensure pb directory is in sys.path so generated grpc files can import each other
 try:
     import fraud_common
-    sys.path.append(os.path.join(os.path.dirname(fraud_common.__file__), 'pb'))
+
+    sys.path.append(os.path.join(os.path.dirname(fraud_common.__file__), "pb"))
 except ImportError:
     pass
 
@@ -20,10 +21,11 @@ from app.service import MLScoringServiceServicer
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("ml_scoring_service")
 
+
 async def serve():
     # Initialize the gRPC server
     server = grpc.aio.server()
-    
+
     # Register the ML Scoring Service
     ml_scoring_servicer = MLScoringServiceServicer()
     ml_scoring_pb2_grpc.add_MLScoringServiceServicer_to_server(ml_scoring_servicer, server)
@@ -35,7 +37,7 @@ async def serve():
 
     # Add Reflection (optional, useful for testing with grpcurl)
     SERVICE_NAMES = (
-        ml_scoring_pb2.DESCRIPTOR.services_by_name['MLScoringService'].full_name,
+        ml_scoring_pb2.DESCRIPTOR.services_by_name["MLScoringService"].full_name,
         health.SERVICE_NAME,
         reflection.SERVICE_NAME,
     )
@@ -46,14 +48,15 @@ async def serve():
     server.add_insecure_port(listen_addr)
     logger.info(f"Starting ML Scoring Service on {listen_addr}...")
     await server.start()
-    
+
     # Graceful shutdown handler
     async def server_graceful_shutdown():
         logger.info("Starting graceful shutdown...")
         await server.stop(5)
-    
+
     # Wait for termination
     await server.wait_for_termination()
+
 
 if __name__ == "__main__":
     asyncio.run(serve())

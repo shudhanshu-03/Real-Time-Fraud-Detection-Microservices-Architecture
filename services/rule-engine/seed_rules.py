@@ -7,6 +7,7 @@ import os
 
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://fraud_user:fraud_pass@localhost:5432/fraud_transactions")
 
+
 async def seed_rules():
     print(f"Connecting to {DATABASE_URL}...")
     engine = create_async_engine(DATABASE_URL, echo=False)
@@ -19,12 +20,7 @@ async def seed_rules():
             "category": "AMOUNT",
             "severity": "HIGH",
             "score_contribution": 0.4,
-            "conditions": json.dumps({
-                "type": "condition",
-                "field": "amount",
-                "operator": ">",
-                "value": 5000.0
-            })
+            "conditions": json.dumps({"type": "condition", "field": "amount", "operator": ">", "value": 5000.0}),
         },
         {
             "id": "1002",
@@ -32,12 +28,7 @@ async def seed_rules():
             "category": "AMOUNT",
             "severity": "CRITICAL",
             "score_contribution": 0.8,
-            "conditions": json.dumps({
-                "type": "condition",
-                "field": "amount",
-                "operator": ">",
-                "value": 15000.0
-            })
+            "conditions": json.dumps({"type": "condition", "field": "amount", "operator": ">", "value": 15000.0}),
         },
         {
             "id": "1003",
@@ -45,12 +36,7 @@ async def seed_rules():
             "category": "VELOCITY",
             "severity": "HIGH",
             "score_contribution": 0.5,
-            "conditions": json.dumps({
-                "type": "velocity",
-                "entity": "card_number",
-                "window_seconds": 3600,
-                "limit": 5
-            })
+            "conditions": json.dumps({"type": "velocity", "entity": "card_number", "window_seconds": 3600, "limit": 5}),
         },
         {
             "id": "1004",
@@ -58,18 +44,16 @@ async def seed_rules():
             "category": "MERCHANT",
             "severity": "MEDIUM",
             "score_contribution": 0.3,
-            "conditions": json.dumps({
-                "type": "condition",
-                "field": "merchant_id",
-                "operator": "==",
-                "value": "CRYPTO_EXCHANGE"
-            })
-        }
+            "conditions": json.dumps(
+                {"type": "condition", "field": "merchant_id", "operator": "==", "value": "CRYPTO_EXCHANGE"}
+            ),
+        },
     ]
 
     async with async_session() as session:
         # Check if table exists
-        await session.execute(text("""
+        await session.execute(
+            text("""
             CREATE TABLE IF NOT EXISTS rules (
                 id VARCHAR(255) PRIMARY KEY,
                 rule_name VARCHAR(255) NOT NULL,
@@ -79,12 +63,13 @@ async def seed_rules():
                 conditions JSONB NOT NULL,
                 is_active BOOLEAN DEFAULT true
             )
-        """))
-        
+        """)
+        )
+
         # Clear existing rules
         print("Clearing existing rules...")
         await session.execute(text("DELETE FROM rules"))
-        
+
         # Insert new rules
         print("Inserting new rules...")
         for rule in rules:
@@ -99,14 +84,15 @@ async def seed_rules():
                     "category": rule["category"],
                     "severity": rule["severity"],
                     "score_contribution": rule["score_contribution"],
-                    "conditions": rule["conditions"]
-                }
+                    "conditions": rule["conditions"],
+                },
             )
-        
+
         await session.commit()
         print(f"Successfully seeded {len(rules)} rules.")
-        
+
     await engine.dispose()
+
 
 if __name__ == "__main__":
     asyncio.run(seed_rules())

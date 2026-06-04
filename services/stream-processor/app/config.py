@@ -1,8 +1,10 @@
 """
 Stream Processor Configuration
 """
+
 from pydantic_settings import BaseSettings
 from pydantic import Field
+
 
 class StreamProcessorSettings(BaseSettings):
     service_name: str = Field(default="stream-processor")
@@ -52,5 +54,6 @@ class StreamProcessorSettings(BaseSettings):
         "case_sensitive": False,
         "extra": "ignore",
     }
+
 
 settings = StreamProcessorSettings()

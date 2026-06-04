@@ -30,15 +30,11 @@ class CorrelationIDMiddleware(BaseHTTPMiddleware):
     * bound to the structlog context for automatic inclusion in log entries.
     """
 
-    async def dispatch(
-        self, request: Request, call_next: RequestResponseEndpoint
-    ) -> Response:
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         """Process the request, attaching a correlation ID."""
 
         # Extract existing correlation ID or generate a new one
-        correlation_id: str = request.headers.get(
-            CORRELATION_ID_HEADER, str(uuid.uuid4())
-        )
+        correlation_id: str = request.headers.get(CORRELATION_ID_HEADER, str(uuid.uuid4()))
 
         # Store in request state for downstream access
         request.state.correlation_id = correlation_id
