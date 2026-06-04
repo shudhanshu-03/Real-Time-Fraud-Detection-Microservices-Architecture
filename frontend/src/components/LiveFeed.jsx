@@ -69,14 +69,20 @@ const LiveFeed = () => {
               <div className="tx-icon">
                 {tx.type === 'CREDIT' ? '↓' : '↑'}
               </div>
-              <div>
-                <div className="font-medium">{tx.merchant_name || 'Unknown'}</div>
-                <div className="text-sm text-muted">{tx.type} • {new Date(tx.timestamp).toLocaleTimeString()}</div>
+              <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, gap: '2px' }}>
+                <span className="font-medium" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {tx.merchant_name || 'Unknown'}
+                </span>
+                <span className="text-sm text-muted" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {tx.type} • {new Date(tx.timestamp).toLocaleTimeString()}
+                </span>
+                <span className="font-medium text-xs" style={{ color: 'hsl(var(--text-main))' }}>
+                  ${tx.amount?.toFixed(2)}
+                </span>
               </div>
             </div>
             
             <div className="tx-meta">
-              <div className="font-bold">${tx.amount?.toFixed(2)}</div>
               <RiskBadge score={tx.final_score} />
             </div>
           </div>

@@ -91,12 +91,13 @@ h1, h2, h3, h4, h5, h6 {
 .dashboard-container {
   display: grid;
   grid-template-columns: 280px 1fr 350px;
-  grid-template-rows: 80px 1fr;
+  grid-template-rows: 80px minmax(0, 1fr);
   gap: 24px;
   padding: 24px;
-  min-height: 100vh;
+  height: 100vh;
   max-width: 1800px;
   margin: 0 auto;
+  overflow: hidden;
 }
 
 .topbar {

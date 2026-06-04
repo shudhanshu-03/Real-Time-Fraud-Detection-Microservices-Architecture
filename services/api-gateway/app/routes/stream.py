@@ -39,24 +39,27 @@ kafka_consumer_task = None
 
 
 async def consume_evaluated_transactions():
-    consumer = AIOKafkaConsumer(
-        "fraud.evaluated.transactions",
-        bootstrap_servers=settings.kafka_bootstrap_servers,
-        group_id="api-gateway-ws-group",
-        value_deserializer=lambda x: x.decode("utf-8"),
-    )
+    while True:
+        try:
+            consumer = AIOKafkaConsumer(
+                "fraud.evaluated.transactions",
+                bootstrap_servers=settings.kafka_bootstrap_servers,
+                group_id="api-gateway-ws-group",
+                value_deserializer=lambda x: x.decode("utf-8"),
+            )
 
-    await consumer.start()
-    try:
-        async for msg in consumer:
-            logger.info("broadcasting_transaction", offset=msg.offset)
-            await manager.broadcast(msg.value)
-    except asyncio.CancelledError:
-        pass
-    except Exception as e:
-        logger.error("kafka_consumer_error", error=str(e))
-    finally:
-        await consumer.stop()
+            await consumer.start()
+            try:
+                async for msg in consumer:
+                    logger.info("broadcasting_transaction", offset=msg.offset)
+                    await manager.broadcast(msg.value)
+            finally:
+                await consumer.stop()
+        except asyncio.CancelledError:
+            break
+        except Exception as e:
+            logger.error("kafka_consumer_error", error=str(e))
+            await asyncio.sleep(5)
 
 
 def start_kafka_consumer():

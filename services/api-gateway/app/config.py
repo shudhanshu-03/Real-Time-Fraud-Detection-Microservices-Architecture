@@ -28,8 +28,8 @@ class Settings(BaseSettings):
 
     # ── Upstream service URLs ───────────────────────────────────────────
     transaction_service_url: str = "http://transaction-service:8001"
-    alert_service_url: str = "http://alert-service:8006"
-    case_service_url: str = "http://case-management:8007"
+    alert_service_url: str = "http://alert-service:8087"
+    case_service_url: str = "http://case-management:8088"
     rule_engine_url: str = "http://rule-engine:8003"
     monitoring_service_url: str = "http://monitoring-service:8010"
 

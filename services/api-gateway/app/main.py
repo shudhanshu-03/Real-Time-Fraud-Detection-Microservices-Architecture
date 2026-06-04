@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
-from app.routes import transactions, stream, metrics
+from app.routes import transactions, stream, metrics, alerts, cases
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -25,6 +25,8 @@ app.add_middleware(
 app.include_router(transactions.router, prefix="/api/v1")
 app.include_router(stream.router, prefix="/api/v1")
 app.include_router(metrics.router, prefix="/api/v1")
+app.include_router(alerts.router, prefix="/api/v1")
+app.include_router(cases.router, prefix="/api/v1")
 
 
 @app.get("/health")

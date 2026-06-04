@@ -4,6 +4,15 @@ from sqlalchemy.future import select
 from typing import List, Dict, Any
 from app.database import get_db
 from app.models.alert import Alert
+from pydantic import BaseModel
+
+class AlertCreate(BaseModel):
+    transaction_id: str
+    customer_id: str
+    risk_score: float = 0.0
+    status: str = "NEW"
+    description: str = None
+    alert_type: str = None
 
 router = APIRouter()
 
@@ -40,3 +49,16 @@ async def get_alert(alert_id: str, db: AsyncSession = Depends(get_db)):
         "reason": alert.reason,
         "created_at": alert.created_at,
     }
+
+@router.post("/alerts", status_code=201)
+async def create_alert(alert_in: AlertCreate, db: AsyncSession = Depends(get_db)):
+    new_alert = Alert(
+        transaction_id=alert_in.transaction_id,
+        customer_id=alert_in.customer_id,
+        score=alert_in.risk_score,
+        status=alert_in.status.upper(),
+        reason=f"[{alert_in.alert_type}] {alert_in.description}" if alert_in.alert_type else alert_in.description
+    )
+    db.add(new_alert)
+    await db.commit()
+    return {"status": "success", "alert_id": new_alert.alert_id}
