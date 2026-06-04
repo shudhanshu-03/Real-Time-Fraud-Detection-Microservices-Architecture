@@ -17,16 +17,15 @@
 
 $ErrorActionPreference = "Stop"
 
-# ---------------------------------------------------------------------------
+
 # Paths
-# ---------------------------------------------------------------------------
+
 $ScriptDir   = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $ProjectRoot = Split-Path -Parent $ScriptDir
 $DockerComposeFile = Join-Path $ProjectRoot "infrastructure\docker\docker-compose.yml"
 
-# ---------------------------------------------------------------------------
 # Helper Functions
-# ---------------------------------------------------------------------------
+
 function Write-Banner {
     Write-Host ""
     Write-Host "╔══════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
@@ -94,9 +93,8 @@ function Wait-ForService {
     return $false
 }
 
-# ==============================================================================
 # Pre-flight Checks
-# ==============================================================================
+
 Write-Banner
 
 Write-Info "Running pre-flight checks..."
@@ -146,9 +144,8 @@ catch {
     exit 1
 }
 
-# ==============================================================================
 # Step 0 - Environment File
-# ==============================================================================
+
 Write-Step -Number 0 -Title "Preparing environment file"
 
 $EnvFile    = Join-Path $ProjectRoot ".env"
@@ -214,9 +211,8 @@ else {
     Write-Ok ".env file already exists"
 }
 
-# ==============================================================================
 # Step 1 - Build Docker Images
-# ==============================================================================
+
 Write-Step -Number 1 -Title "Building all Docker images"
 
 try {
@@ -228,9 +224,8 @@ catch {
     exit 1
 }
 
-# ==============================================================================
 # Step 2 - Start Infrastructure Services
-# ==============================================================================
+
 Write-Step -Number 2 -Title "Starting infrastructure services"
 
 $infraServices = @("postgres", "redis", "kafka", "neo4j", "elasticsearch")
@@ -244,9 +239,9 @@ catch {
     exit 1
 }
 
-# ==============================================================================
+
 # Step 3 - Wait for Infrastructure Health Checks
-# ==============================================================================
+
 Write-Step -Number 3 -Title "Waiting for infrastructure health checks"
 
 $healthTimeout = 180
@@ -272,9 +267,8 @@ if (-not $allHealthy) {
 
 Write-Ok "All infrastructure services are healthy"
 
-# ==============================================================================
 # Step 4 - Start Schema Registry & Kafka UI
-# ==============================================================================
+
 Write-Step -Number 4 -Title "Starting Schema Registry & Kafka UI"
 
 try {
@@ -287,9 +281,8 @@ catch {
     exit 1
 }
 
-# ==============================================================================
 # Step 5 - Create Kafka Topics
-# ==============================================================================
+
 Write-Step -Number 5 -Title "Creating Kafka topics"
 
 $topicsScript = Join-Path $ScriptDir "create-kafka-topics.sh"
@@ -338,9 +331,8 @@ foreach ($topic in $topics) {
 
 Write-Ok "Kafka topics created"
 
-# ==============================================================================
 # Step 6 - Start Application Services
-# ==============================================================================
+
 Write-Step -Number 6 -Title "Starting application microservices"
 
 $appServices = @(
@@ -366,9 +358,8 @@ catch {
     exit 1
 }
 
-# ==============================================================================
 # Step 7 - Wait for Application Health Checks
-# ==============================================================================
+
 Write-Step -Number 7 -Title "Waiting for application health checks"
 
 $appHealthTimeout = 120
@@ -391,9 +382,8 @@ foreach ($container in $appContainers) {
     Wait-ForService -ContainerName $container -TimeoutSeconds $appHealthTimeout | Out-Null
 }
 
-# ==============================================================================
 # Summary
-# ==============================================================================
+
 Write-Host ""
 Write-Host "╔══════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
 Write-Host "║                                                            ║" -ForegroundColor Cyan

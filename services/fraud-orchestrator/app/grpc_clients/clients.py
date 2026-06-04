@@ -7,9 +7,9 @@ import os
 pb_path = os.path.join(os.path.dirname(__file__), "..", "..", "shared", "fraud_common", "pb")
 sys.path.insert(0, os.path.abspath(pb_path))
 
-from shared.fraud_common.pb import rule_engine_pb2_grpc, rule_engine_pb2
-from shared.fraud_common.pb import ml_scoring_pb2_grpc, ml_scoring_pb2
-from shared.fraud_common.pb import graph_analysis_pb2_grpc, graph_analysis_pb2
+from shared.fraud_common.pb import rule_engine_pb2_grpc, rule_engine_pb2  # noqa: E402
+from shared.fraud_common.pb import ml_scoring_pb2_grpc, ml_scoring_pb2  # noqa: E402
+from shared.fraud_common.pb import graph_analysis_pb2_grpc, graph_analysis_pb2  # noqa: E402
 
 logger = structlog.get_logger(__name__)
 

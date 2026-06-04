@@ -30,16 +30,12 @@ except ImportError:
     print("\033[31m[ERROR]\033[0m  httpx is not installed. Run: pip install httpx")
     sys.exit(1)
 
-# ==============================================================================
 # Configuration
-# ==============================================================================
 
 API_BASE_URL: str = os.getenv("API_BASE_URL", "http://localhost:8000")
 REQUEST_TIMEOUT: float = 30.0
 
-# ---------------------------------------------------------------------------
 # Color helpers
-# ---------------------------------------------------------------------------
 
 class Color:
     RED     = "\033[0;31m"
@@ -65,9 +61,7 @@ def log_error(msg: str) -> None:
     print(f"{Color.RED}[ERROR]{Color.NC}   {msg}")
 
 
-# ==============================================================================
 # Data Generators
-# ==============================================================================
 
 # --- Constants ----------------------------------------------------------------
 
@@ -170,9 +164,7 @@ def _timestamp_within(days_back: int = 30) -> str:
     return dt.isoformat()
 
 
-# ---------------------------------------------------------------------------
 # Transaction Generators
-# ---------------------------------------------------------------------------
 
 def generate_normal_transactions(count: int = 70) -> list[dict[str, Any]]:
     """Generate realistic low-risk domestic transactions."""
@@ -250,9 +242,7 @@ def generate_fraudulent_transactions(count: int = 10) -> list[dict[str, Any]]:
     return txns
 
 
-# ---------------------------------------------------------------------------
 # Alert Generator
-# ---------------------------------------------------------------------------
 
 ALERT_SEVERITIES = ["CRITICAL", "HIGH", "MEDIUM", "LOW"]
 ALERT_TYPES = [
@@ -298,9 +288,7 @@ def generate_alerts(count: int = 10) -> list[dict[str, Any]]:
     return alerts
 
 
-# ---------------------------------------------------------------------------
 # Case Generator
-# ---------------------------------------------------------------------------
 
 CASE_STATUSES = ["open", "investigating", "resolved"]
 
@@ -333,9 +321,7 @@ def generate_cases(count: int = 3) -> list[dict[str, Any]]:
     return cases
 
 
-# ==============================================================================
 # API Client
-# ==============================================================================
 
 async def post_batch(
     client: httpx.AsyncClient,
@@ -370,9 +356,7 @@ async def post_batch(
     return successes, failures
 
 
-# ==============================================================================
 # Main
-# ==============================================================================
 
 async def main() -> None:
     print()

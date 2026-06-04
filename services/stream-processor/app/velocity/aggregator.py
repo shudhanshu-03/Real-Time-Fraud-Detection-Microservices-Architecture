@@ -104,7 +104,7 @@ class VelocityAggregator:
                     val = float(item.split(":")[0])
                     if val > max_val:
                         max_val = val
-                except:
+                except Exception:
                     pass
             return max_val
 

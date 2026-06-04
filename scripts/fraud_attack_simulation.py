@@ -104,9 +104,7 @@ def base_transaction() -> Dict[str, Any]:
         "risk_label": "fraudulent",
     }
 
-# ==============================================================================
 # Attack Scenario Generators
-# ==============================================================================
 
 def generate_velocity_attack(count: int) -> List[Dict[str, Any]]:
     """
@@ -223,9 +221,7 @@ def generate_synthetic_identity_attack(count: int) -> List[Dict[str, Any]]:
         txns.append(txn)
     return txns
 
-# ==============================================================================
 # Simulation Engine
-# ==============================================================================
 
 class SimulationStats:
     def __init__(self):
@@ -344,9 +340,7 @@ async def run_attack(attack_type: str, tps: int, duration: int) -> None:
     else:
         log_success("Simulation completed successfully!")
 
-# ==============================================================================
 # CLI Entry Point
-# ==============================================================================
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Fraud Attack Simulation Tool")

@@ -31,9 +31,8 @@ CYAN='\033[0;36m'
 BOLD='\033[1m'
 NC='\033[0m'
 
-# ---------------------------------------------------------------------------
 # Configuration
-# ---------------------------------------------------------------------------
+
 KAFKA_BOOTSTRAP_SERVER="${KAFKA_BOOTSTRAP_SERVER:-localhost:9092}"
 REPLICATION_FACTOR="${1:-1}"
 
@@ -45,9 +44,8 @@ for arg in "$@"; do
     esac
 done
 
-# ---------------------------------------------------------------------------
 # Detect kafka-topics binary
-# ---------------------------------------------------------------------------
+
 KAFKA_BIN=""
 if command -v kafka-topics &>/dev/null; then
     KAFKA_BIN="kafka-topics"
@@ -64,9 +62,8 @@ else
     exit 1
 fi
 
-# ---------------------------------------------------------------------------
 # Helper Functions
-# ---------------------------------------------------------------------------
+
 log_info()    { echo -e "${BLUE}[INFO]${NC}    $*"; }
 log_success() { echo -e "${GREEN}[OK]${NC}      $*"; }
 log_warn()    { echo -e "${YELLOW}[WARN]${NC}    $*"; }
@@ -123,10 +120,10 @@ log_info "Replication factor: ${BOLD}${REPLICATION_FACTOR}${NC}"
 log_info "Binary           : ${BOLD}${KAFKA_BIN}${NC}"
 echo ""
 
-# ==============================================================================
 # Topic Definitions
-# ==============================================================================
+
 # Retention constants (milliseconds)
+
 RETENTION_1D=86400000
 RETENTION_7D=604800000
 RETENTION_30D=2592000000
@@ -189,9 +186,9 @@ create_topic "dlq.fraud-scoring"            10  "$REPLICATION_FACTOR"  "$RETENTI
 create_topic "dlq.notifications"             5  "$REPLICATION_FACTOR"  "$RETENTION_30D"
 echo ""
 
-# ==============================================================================
+
 # Summary
-# ==============================================================================
+
 TOTAL=$((TOPICS_CREATED + TOPICS_EXISTED + TOPICS_FAILED))
 
 echo -e "${CYAN}════════════════════════════════════════════════════════════${NC}"

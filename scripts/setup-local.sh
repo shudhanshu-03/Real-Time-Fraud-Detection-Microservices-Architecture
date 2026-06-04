@@ -19,9 +19,8 @@ set -euo pipefail
 #   - Python 3.8+
 # ==============================================================================
 
-# ---------------------------------------------------------------------------
 # Color Constants
-# ---------------------------------------------------------------------------
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -31,16 +30,14 @@ MAGENTA='\033[0;35m'
 BOLD='\033[1m'
 NC='\033[0m' # No Color
 
-# ---------------------------------------------------------------------------
 # Paths
-# ---------------------------------------------------------------------------
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 DOCKER_COMPOSE_FILE="${PROJECT_ROOT}/infrastructure/docker/docker-compose.yml"
 
-# ---------------------------------------------------------------------------
 # Helper Functions
-# ---------------------------------------------------------------------------
+
 log_info()    { echo -e "${BLUE}[INFO]${NC}    $*"; }
 log_success() { echo -e "${GREEN}[OK]${NC}      $*"; }
 log_warn()    { echo -e "${YELLOW}[WARN]${NC}    $*"; }
@@ -90,9 +87,8 @@ wait_for_service() {
     return 1
 }
 
-# ---------------------------------------------------------------------------
 # docker_compose  — wrapper that picks docker compose v2 or v1 automatically
-# ---------------------------------------------------------------------------
+
 COMPOSE_CMD=""
 
 detect_compose() {
@@ -112,9 +108,8 @@ dc() {
     $COMPOSE_CMD -f "$DOCKER_COMPOSE_FILE" "$@"
 }
 
-# ==============================================================================
 # Pre-flight Checks
-# ==============================================================================
+
 print_banner
 
 log_info "Running pre-flight checks…"
@@ -145,9 +140,8 @@ if ! docker info &>/dev/null; then
 fi
 log_success "Docker daemon is running"
 
-# ==============================================================================
 # Step 0 — Environment File
-# ==============================================================================
+
 log_step 0 "Preparing environment file"
 
 ENV_FILE="${PROJECT_ROOT}/.env"
@@ -212,25 +206,22 @@ else
     log_success ".env file already exists"
 fi
 
-# ==============================================================================
 # Step 1 — Build Docker Images
-# ==============================================================================
+
 log_step 1 "Building all Docker images"
 dc build --parallel 2>&1 | tail -5
 log_success "Docker images built"
 
-# ==============================================================================
 # Step 2 — Start Infrastructure Services
-# ==============================================================================
+
 log_step 2 "Starting infrastructure services"
 
 INFRA_SERVICES=(postgres redis kafka neo4j elasticsearch)
 dc up -d "${INFRA_SERVICES[@]}"
 log_success "Infrastructure containers started"
 
-# ==============================================================================
 # Step 3 — Wait for Infrastructure Health Checks
-# ==============================================================================
+
 log_step 3 "Waiting for infrastructure health checks"
 
 HEALTH_TIMEOUT=180
@@ -243,18 +234,16 @@ wait_for_service "fraud-elasticsearch"  "$HEALTH_TIMEOUT"
 
 log_success "All infrastructure services are healthy"
 
-# ==============================================================================
 # Step 4 — Start Schema Registry & Kafka UI
-# ==============================================================================
+
 log_step 4 "Starting Schema Registry & Kafka UI"
 
 dc up -d schema-registry kafka-ui
 sleep 5
 log_success "Schema Registry and Kafka UI started"
 
-# ==============================================================================
 # Step 5 — Create Kafka Topics
-# ==============================================================================
+
 log_step 5 "Creating Kafka topics"
 
 TOPICS_SCRIPT="${SCRIPT_DIR}/create-kafka-topics.sh"
@@ -280,9 +269,8 @@ fi
 
 log_success "Kafka topics created"
 
-# ==============================================================================
 # Step 6 — Start Application Services
-# ==============================================================================
+
 log_step 6 "Starting application microservices"
 
 APP_SERVICES=(
@@ -302,9 +290,8 @@ APP_SERVICES=(
 dc up -d "${APP_SERVICES[@]}"
 log_success "Application containers started"
 
-# ==============================================================================
 # Step 7 — Wait for Application Health Checks
-# ==============================================================================
+
 log_step 7 "Waiting for application health checks"
 
 APP_HEALTH_TIMEOUT=120
@@ -321,9 +308,8 @@ wait_for_service "fraud-notification-service" "$APP_HEALTH_TIMEOUT" || true
 wait_for_service "fraud-audit-service"        "$APP_HEALTH_TIMEOUT" || true
 wait_for_service "fraud-monitoring-service"   "$APP_HEALTH_TIMEOUT" || true
 
-# ==============================================================================
 # Summary
-# ==============================================================================
+
 echo ""
 echo -e "${CYAN}${BOLD}"
 echo "╔══════════════════════════════════════════════════════════════╗"
