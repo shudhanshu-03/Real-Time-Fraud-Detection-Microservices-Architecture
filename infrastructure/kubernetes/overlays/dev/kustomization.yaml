@@ -1,0 +1,288 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: fraud-platform
+
+resources:
+  - ../../base
+
+commonLabels:
+  environment: dev
+
+# ---------------------------------------------------------------------------
+# Dev overlay: single-replica, low-resource deployments for local/dev clusters
+# ---------------------------------------------------------------------------
+patches:
+  # ── api-gateway ──────────────────────────────────────────────────────────
+  - target:
+      kind: Deployment
+      name: api-gateway
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: api-gateway
+      spec:
+        replicas: 1
+        template:
+          spec:
+            containers:
+              - name: api-gateway
+                resources:
+                  requests:
+                    cpu: 100m
+                    memory: 128Mi
+                  limits:
+                    cpu: 250m
+                    memory: 256Mi
+
+  # ── transaction-service ──────────────────────────────────────────────────
+  - target:
+      kind: Deployment
+      name: transaction-service
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: transaction-service
+      spec:
+        replicas: 1
+        template:
+          spec:
+            containers:
+              - name: transaction-service
+                resources:
+                  requests:
+                    cpu: 100m
+                    memory: 128Mi
+                  limits:
+                    cpu: 250m
+                    memory: 256Mi
+
+  # ── fraud-orchestrator ───────────────────────────────────────────────────
+  - target:
+      kind: Deployment
+      name: fraud-orchestrator
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: fraud-orchestrator
+      spec:
+        replicas: 1
+        template:
+          spec:
+            containers:
+              - name: fraud-orchestrator
+                resources:
+                  requests:
+                    cpu: 100m
+                    memory: 128Mi
+                  limits:
+                    cpu: 250m
+                    memory: 256Mi
+
+  # ── rule-engine ──────────────────────────────────────────────────────────
+  - target:
+      kind: Deployment
+      name: rule-engine
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: rule-engine
+      spec:
+        replicas: 1
+        template:
+          spec:
+            containers:
+              - name: rule-engine
+                resources:
+                  requests:
+                    cpu: 100m
+                    memory: 128Mi
+                  limits:
+                    cpu: 250m
+                    memory: 256Mi
+
+  # ── ml-scoring ───────────────────────────────────────────────────────────
+  - target:
+      kind: Deployment
+      name: ml-scoring
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: ml-scoring
+      spec:
+        replicas: 1
+        template:
+          spec:
+            containers:
+              - name: ml-scoring
+                resources:
+                  requests:
+                    cpu: 100m
+                    memory: 128Mi
+                  limits:
+                    cpu: 250m
+                    memory: 256Mi
+
+  # ── graph-analysis ───────────────────────────────────────────────────────
+  - target:
+      kind: Deployment
+      name: graph-analysis
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: graph-analysis
+      spec:
+        replicas: 1
+        template:
+          spec:
+            containers:
+              - name: graph-analysis
+                resources:
+                  requests:
+                    cpu: 100m
+                    memory: 128Mi
+                  limits:
+                    cpu: 250m
+                    memory: 256Mi
+
+  # ── alert-service ────────────────────────────────────────────────────────
+  - target:
+      kind: Deployment
+      name: alert-service
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: alert-service
+      spec:
+        replicas: 1
+        template:
+          spec:
+            containers:
+              - name: alert-service
+                resources:
+                  requests:
+                    cpu: 100m
+                    memory: 128Mi
+                  limits:
+                    cpu: 250m
+                    memory: 256Mi
+
+  # ── case-management ──────────────────────────────────────────────────────
+  - target:
+      kind: Deployment
+      name: case-management
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: case-management
+      spec:
+        replicas: 1
+        template:
+          spec:
+            containers:
+              - name: case-management
+                resources:
+                  requests:
+                    cpu: 100m
+                    memory: 128Mi
+                  limits:
+                    cpu: 250m
+                    memory: 256Mi
+
+  # ── notification-service ─────────────────────────────────────────────────
+  - target:
+      kind: Deployment
+      name: notification-service
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: notification-service
+      spec:
+        replicas: 1
+        template:
+          spec:
+            containers:
+              - name: notification-service
+                resources:
+                  requests:
+                    cpu: 100m
+                    memory: 128Mi
+                  limits:
+                    cpu: 250m
+                    memory: 256Mi
+
+  # ── audit-service ────────────────────────────────────────────────────────
+  - target:
+      kind: Deployment
+      name: audit-service
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: audit-service
+      spec:
+        replicas: 1
+        template:
+          spec:
+            containers:
+              - name: audit-service
+                resources:
+                  requests:
+                    cpu: 100m
+                    memory: 128Mi
+                  limits:
+                    cpu: 250m
+                    memory: 256Mi
+
+  # ── monitoring-service ───────────────────────────────────────────────────
+  - target:
+      kind: Deployment
+      name: monitoring-service
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: monitoring-service
+      spec:
+        replicas: 1
+        template:
+          spec:
+            containers:
+              - name: monitoring-service
+                resources:
+                  requests:
+                    cpu: 100m
+                    memory: 128Mi
+                  limits:
+                    cpu: 250m
+                    memory: 256Mi
+
+  # ── Disable HPAs in dev ─────────────────────────────────────────────────
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: transaction-service-hpa
+    patch: |
+      $patch: delete
+      apiVersion: autoscaling/v2
+      kind: HorizontalPodAutoscaler
+      metadata:
+        name: transaction-service-hpa
+
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: fraud-orchestrator-hpa
+    patch: |
+      $patch: delete
+      apiVersion: autoscaling/v2
+      kind: HorizontalPodAutoscaler
+      metadata:
+        name: fraud-orchestrator-hpa

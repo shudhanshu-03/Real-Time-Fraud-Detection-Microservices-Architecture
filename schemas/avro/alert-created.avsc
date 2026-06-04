@@ -1,0 +1,61 @@
+{
+  "namespace": "com.fraudplatform.events.alert",
+  "type": "record",
+  "name": "AlertCreated",
+  "doc": "Emitted by the Alert Management Service when a fraud scoring result triggers alert generation. Alerts are created for transactions that exceed risk thresholds or match specific rule patterns requiring human investigation. This event drives the case management workflow, analyst notification system, and SLA tracking pipeline.",
+  "fields": [
+    {
+      "name": "alert_id",
+      "type": "string",
+      "doc": "Globally unique alert identifier (UUIDv7). Primary key for alert lifecycle tracking across the case management system."
+    },
+    {
+      "name": "transaction_id",
+      "type": "string",
+      "doc": "Reference to the originating transaction that triggered this alert (foreign key to TransactionCreated.transaction_id)."
+    },
+    {
+      "name": "account_id",
+      "type": "string",
+      "doc": "Account holder identifier. Denormalized for efficient alert queue filtering by account without joining to the transaction store."
+    },
+    {
+      "name": "risk_score",
+      "type": "double",
+      "doc": "The final composite risk score from the scoring engine that triggered alert creation. Value in the range [0.0, 1.0]. Copied from FraudScored.final_score for alert-level analytics without cross-event joins."
+    },
+    {
+      "name": "severity",
+      "type": "string",
+      "doc": "Alert severity classification derived from risk score bands and rule criticality. Valid values: 'critical' (score >= 0.9, immediate action required), 'high' (score >= 0.7), 'medium' (score >= 0.5), 'low' (score >= 0.3). Drives SLA timers and analyst queue prioritization."
+    },
+    {
+      "name": "alert_type",
+      "type": "string",
+      "doc": "Classification of the alert trigger mechanism: 'real_time' (inline scoring), 'batch' (periodic batch re-scoring), 'rule_override' (manual rule trigger), 'model_retro' (model retro-score), 'escalation' (escalated from a prior alert). Determines routing and SLA assignment."
+    },
+    {
+      "name": "category",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Fraud category classification when determinable: 'account_takeover', 'card_not_present', 'counterfeit_card', 'lost_stolen', 'application_fraud', 'friendly_fraud', 'money_laundering', 'synthetic_identity'. Null when the fraud type cannot be pre-classified."
+    },
+    {
+      "name": "triggered_rules",
+      "type": {
+        "type": "array",
+        "items": "string"
+      },
+      "default": [],
+      "doc": "List of rule identifiers that contributed to alert generation (copied from FraudScored.triggered_rules). Used for rule effectiveness analysis and false-positive rate tracking per rule."
+    },
+    {
+      "name": "created_at",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      },
+      "doc": "Timestamp when the alert was created, in milliseconds since Unix epoch (UTC). Marks the start of the alert SLA timer and is used for time-to-disposition metrics."
+    }
+  ]
+}

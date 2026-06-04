@@ -1,0 +1,263 @@
+// =============================================================================
+// ML Scoring Service - gRPC Proto Definition
+// =============================================================================
+// Machine learning inference subsystem for the Real-Time Fraud Detection
+// platform. Serves predictions from an ensemble of fraud detection models
+// (XGBoost, neural network, isolation forest) behind a unified gRPC API.
+//
+// Models are versioned, A/B testable, and hot-swappable via the model registry.
+// Inference latency target: <30ms p99 per prediction.
+// =============================================================================
+
+syntax = "proto3";
+
+package fraud_platform.ml;
+
+option java_multiple_files = true;
+option java_package = "com.fraud_platform.ml";
+option go_package = "github.com/fraud-platform/proto/ml";
+
+import "google/protobuf/timestamp.proto";
+
+// =============================================================================
+// Service Definition
+// =============================================================================
+
+// MLScoringService provides real-time fraud probability predictions using
+// trained machine learning models. Supports model versioning, canary
+// deployments, and shadow scoring for offline evaluation.
+service MLScoringService {
+  // PredictFraud runs inference on a set of transaction features and returns
+  // a fraud probability score with anomaly flags.
+  // This is the hot path — called for every transaction during scoring.
+  rpc PredictFraud(PredictionRequest) returns (PredictionResult);
+
+  // GetModelInfo retrieves metadata about a deployed model, including version,
+  // accuracy metrics, and training recency. Used by the monitoring dashboard
+  // and model governance workflows.
+  rpc GetModelInfo(ModelInfoRequest) returns (ModelInfo);
+
+  // GetMLHealth returns the health status of the ML scoring service, including
+  // model loading state and GPU utilization.
+  rpc GetMLHealth(HealthRequest) returns (HealthResponse);
+}
+
+// =============================================================================
+// Prediction Request
+// =============================================================================
+
+// PredictionRequest contains the feature vector for a single transaction.
+// Features are pre-computed by the feature engineering pipeline and passed
+// directly — the ML service does NOT perform feature extraction itself.
+message PredictionRequest {
+  // --- Transaction Identity --------------------------------------------------
+
+  // Transaction identifier for correlation and audit logging.
+  string transaction_id = 1;
+
+  // --- Raw Transaction Features ----------------------------------------------
+
+  // Transaction amount in minor currency units.
+  double amount = 2;
+
+  // Merchant Category Code (MCC) — categorical feature, encoded internally.
+  string merchant_category = 3;
+
+  // Payment channel: "pos", "online", "mobile", "atm", "phone".
+  string channel = 4;
+
+  // Whether this is a recurring/subscription payment.
+  bool is_recurring = 5;
+
+  // Whether this is a cross-border transaction.
+  bool is_international = 6;
+
+  // --- Device & Network Features ---------------------------------------------
+
+  // Device fingerprint hash — used for device reputation scoring.
+  string device_fingerprint = 7;
+
+  // Originating IP address — used for IP reputation and geo-velocity features.
+  string ip_address = 8;
+
+  // Transaction origin latitude (WGS 84).
+  double location_lat = 9;
+
+  // Transaction origin longitude (WGS 84).
+  double location_lon = 10;
+
+  // --- Temporal Features -----------------------------------------------------
+
+  // Hour of the day (0–23) in the cardholder's local timezone.
+  // Strong signal for time-of-day behavioral patterns.
+  int32 hour_of_day = 11;
+
+  // Day of the week (0 = Monday, 6 = Sunday).
+  int32 day_of_week = 12;
+
+  // --- Behavioral / Derived Features -----------------------------------------
+
+  // Number of transactions by this card in the trailing observation window.
+  // Typically computed over 1h, 24h, and 7d windows by the feature store.
+  double transaction_frequency = 13;
+
+  // Average transaction amount for this card in the trailing window.
+  double avg_transaction_amount = 14;
+
+  // Standard deviation of transaction amounts — measures spending volatility.
+  double std_transaction_amount = 15;
+
+  // Maximum single transaction amount in the trailing window.
+  double max_transaction_amount = 16;
+
+  // Number of distinct merchants used in the trailing window.
+  int32 distinct_merchants = 17;
+
+  // Number of distinct devices used in the trailing window.
+  int32 distinct_devices = 18;
+
+  // Number of distinct countries transacted in during the trailing window.
+  int32 distinct_countries = 19;
+
+  // Time elapsed since the last transaction (in seconds).
+  // Very short intervals are a strong velocity signal.
+  double time_since_last_transaction = 20;
+
+  // Distance (in km) between the current and previous transaction locations.
+  // Impossible-travel detection relies on this feature.
+  double distance_from_last_transaction = 21;
+
+  // --- Model Routing (optional) ----------------------------------------------
+
+  // Optional: target a specific model version for A/B testing or shadow scoring.
+  // When empty, the default production model is used.
+  string model_version = 22;
+
+  // --- Extensibility ---------------------------------------------------------
+
+  // Additional feature key-value pairs for forward compatibility.
+  // Allows the feature store to pass new features without proto changes.
+  map<string, double> additional_features = 23;
+
+  // Reserved for future feature fields.
+  reserved 24 to 29;
+}
+
+// =============================================================================
+// Prediction Response
+// =============================================================================
+
+// PredictionResult contains the ML model's fraud prediction output.
+message PredictionResult {
+  // Fraud probability score (0.0 = legitimate, 1.0 = confirmed fraud).
+  double ml_score = 1;
+
+  // Anomaly flags raised by the model ensemble. Each flag indicates a
+  // specific type of deviation detected:
+  //   "UNUSUAL_AMOUNT"    — amount deviates significantly from cardholder norm
+  //   "NEW_DEVICE"        — device not previously seen for this card
+  //   "TIME_ANOMALY"      — transaction at unusual hour for this cardholder
+  //   "GEO_ANOMALY"       — location inconsistent with cardholder profile
+  //   "VELOCITY_SPIKE"    — transaction frequency exceeds learned baseline
+  //   "IMPOSSIBLE_TRAVEL" — geographically impossible between transactions
+  repeated string anomaly_flags = 2;
+
+  // Version identifier of the model that produced this prediction.
+  string model_version = 3;
+
+  // Model confidence in the prediction (0.0–1.0). Low confidence may trigger
+  // a "REVIEW" decision instead of an automated accept/decline.
+  double confidence = 4;
+
+  // Inference latency in milliseconds (model execution time only,
+  // excludes network and queuing overhead).
+  double prediction_time_ms = 5;
+
+  // Feature importance scores for the top contributing features.
+  // Used for explainability and analyst review dashboards.
+  map<string, double> feature_importances = 6;
+
+  // Reserved for future prediction metadata (e.g., ensemble member scores).
+  reserved 7 to 9;
+}
+
+// =============================================================================
+// Model Info Messages
+// =============================================================================
+
+// ModelInfoRequest retrieves metadata about a specific or the default model.
+message ModelInfoRequest {
+  // Optional model identifier. When empty, returns info for the currently
+  // active production model.
+  string model_id = 1;
+}
+
+// ModelInfo contains metadata about a deployed fraud detection model.
+message ModelInfo {
+  // Unique model identifier (e.g., "xgboost-ensemble-v3").
+  string model_id = 1;
+
+  // Semantic version of the model artifact (e.g., "3.2.1").
+  string version = 2;
+
+  // Model accuracy on the held-out validation set (0.0–1.0).
+  double accuracy = 3;
+
+  // Precision metric on the validation set.
+  double precision = 4;
+
+  // Recall metric on the validation set.
+  double recall = 5;
+
+  // F1 score on the validation set.
+  double f1_score = 6;
+
+  // AUC-ROC on the validation set.
+  double auc_roc = 7;
+
+  // ISO 8601 timestamp of the last training run.
+  string last_trained = 8;
+
+  // Model deployment status: "ACTIVE", "SHADOW", "CANARY", "RETIRED".
+  string status = 9;
+
+  // Percentage of traffic routed to this model (for canary deployments).
+  double traffic_percentage = 10;
+
+  // Total number of predictions served by this model version.
+  int64 total_predictions = 11;
+
+  // Reserved for future model metadata.
+  reserved 12 to 15;
+}
+
+// =============================================================================
+// Health Check Messages
+// =============================================================================
+
+// HealthRequest is an empty message for health check invocation.
+message HealthRequest {}
+
+// HealthResponse provides service health and operational metadata.
+message HealthResponse {
+  // Service health status: "SERVING", "NOT_SERVING", "UNKNOWN".
+  string status = 1;
+
+  // Canonical service name (e.g., "ml-scoring-service").
+  string service = 2;
+
+  // Semantic version of the deployed service.
+  string version = 3;
+
+  // Timestamp of the health check response.
+  google.protobuf.Timestamp timestamp = 4;
+
+  // Number of models currently loaded in memory.
+  int32 loaded_models = 5;
+
+  // GPU utilization percentage (0–100), if applicable.
+  double gpu_utilization = 6;
+
+  // Average inference latency over the last observation window (ms).
+  double avg_inference_latency_ms = 7;
+}

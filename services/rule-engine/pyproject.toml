@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "rule-engine"
+version = "0.1.0"
+description = "Real-Time Fraud Detection Rule Engine Service"
+authors = ["Antigravity <antigravity@gemini.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.104.1"
+uvicorn = "^0.24.0"
+grpcio = "^1.59.3"
+grpcio-tools = "^1.59.3"
+SQLAlchemy = "^2.0.23"
+asyncpg = "^0.29.0"
+redis = "^5.0.1"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

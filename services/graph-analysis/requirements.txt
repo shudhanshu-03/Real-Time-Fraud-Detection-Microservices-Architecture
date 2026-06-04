@@ -1,0 +1,6 @@
+neo4j
+grpcio
+grpcio-tools
+grpcio-health-checking
+protobuf
+pydantic

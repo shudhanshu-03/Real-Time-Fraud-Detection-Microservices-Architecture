@@ -1,0 +1,235 @@
+// =============================================================================
+// Fraud Scoring Service - gRPC Proto Definition
+// =============================================================================
+// Central orchestration service for the Real-Time Fraud Detection platform.
+// Aggregates scores from rule engine, ML models, and graph analysis to produce
+// a unified fraud score and decision for each incoming transaction.
+//
+// Designed for high-throughput processing (100M+ transactions/day) with strict
+// latency requirements (<100ms p99 scoring time).
+// =============================================================================
+
+syntax = "proto3";
+
+package fraud_platform.scoring;
+
+option java_multiple_files = true;
+option java_package = "com.fraud_platform.scoring";
+option go_package = "github.com/fraud-platform/proto/scoring";
+
+import "google/protobuf/timestamp.proto";
+
+// =============================================================================
+// Service Definition
+// =============================================================================
+
+// FraudScoringService is the primary entry point for transaction fraud evaluation.
+// It orchestrates calls to the rule engine, ML scoring, and graph analysis services,
+// then combines their outputs into a single fraud score and decision.
+service FraudScoringService {
+  // ScoreTransaction evaluates a single transaction event against all fraud
+  // detection subsystems and returns a comprehensive fraud score.
+  // This is the hot path — latency-critical, called for every inbound transaction.
+  rpc ScoreTransaction(TransactionEvent) returns (FraudScore);
+
+  // GetDecision retrieves a previously computed fraud decision by transaction ID.
+  // Used for post-scoring lookups, audit trails, and dispute resolution workflows.
+  rpc GetDecision(DecisionRequest) returns (FraudDecisionResponse);
+
+  // GetScoringHealth returns the health status of the scoring service and its
+  // downstream dependencies. Used by Kubernetes liveness/readiness probes and
+  // the platform monitoring dashboard.
+  rpc GetScoringHealth(HealthRequest) returns (HealthResponse);
+}
+
+// =============================================================================
+// Transaction Messages
+// =============================================================================
+
+// TransactionEvent represents a single payment transaction submitted for fraud
+// evaluation. Contains all contextual signals needed by downstream scoring
+// subsystems. Fields are ordered by logical grouping: identifiers → merchant →
+// financials → device/network → geolocation → flags → extensibility.
+message TransactionEvent {
+  // --- Identifiers -----------------------------------------------------------
+
+  // Globally unique transaction identifier (UUID v4). Serves as the correlation
+  // key across all microservices and Kafka topics.
+  string transaction_id = 1;
+
+  // Masked or tokenized card number (PAN). Never stored in plaintext — upstream
+  // tokenization is enforced before reaching this service.
+  string card_number = 2;
+
+  // --- Merchant Context ------------------------------------------------------
+
+  // Unique identifier for the acquiring merchant.
+  string merchant_id = 3;
+
+  // Human-readable merchant name (as registered with the acquirer).
+  string merchant_name = 4;
+
+  // Merchant Category Code (MCC) — ISO 18245 classification. Critical signal
+  // for rule evaluation (e.g., high-risk MCC lists).
+  string merchant_category = 5;
+
+  // --- Financial Details -----------------------------------------------------
+
+  // Transaction amount in the smallest currency unit (e.g., cents for USD).
+  // Using double for flexibility across currency precisions.
+  double amount = 6;
+
+  // ISO 4217 currency code (e.g., "USD", "EUR", "GBP").
+  string currency = 7;
+
+  // Timestamp of the transaction as reported by the payment gateway.
+  google.protobuf.Timestamp timestamp = 8;
+
+  // --- Channel & Device Context ----------------------------------------------
+
+  // Payment channel: "pos", "online", "mobile", "atm", "phone".
+  string channel = 9;
+
+  // Originating IP address (IPv4 or IPv6). Used for geolocation enrichment
+  // and velocity checks.
+  string ip_address = 10;
+
+  // Device identifier assigned by the client SDK (persistent across sessions).
+  string device_id = 11;
+
+  // Browser/device fingerprint hash — computed client-side from hardware,
+  // software, and behavioral signals.
+  string device_fingerprint = 12;
+
+  // --- Geolocation -----------------------------------------------------------
+
+  // Latitude of the transaction origin (WGS 84).
+  double location_lat = 13;
+
+  // Longitude of the transaction origin (WGS 84).
+  double location_lon = 14;
+
+  // ISO 3166-1 alpha-2 country code for the billing address.
+  string billing_country = 15;
+
+  // ISO 3166-1 alpha-2 country code for the shipping address.
+  // Mismatch with billing_country is a strong fraud signal.
+  string shipping_country = 16;
+
+  // --- Transaction Flags -----------------------------------------------------
+
+  // Whether this is a recurring/subscription charge.
+  bool is_recurring = 17;
+
+  // Whether the transaction crosses national borders.
+  bool is_international = 18;
+
+  // --- Extensibility ---------------------------------------------------------
+
+  // Arbitrary key-value metadata for forward-compatible enrichment.
+  // Examples: "acquirer_ref", "3ds_version", "wallet_type".
+  map<string, string> metadata = 19;
+
+  // Reserved field numbers for future use — prevents accidental reuse.
+  reserved 20 to 29;
+}
+
+// =============================================================================
+// Scoring Response Messages
+// =============================================================================
+
+// FraudScore is the comprehensive scoring result returned by ScoreTransaction.
+// Contains the final blended score, per-subsystem scores, and all triggered
+// signals. Consumers use the `decision` field for accept/reject/review routing.
+message FraudScore {
+  // Transaction identifier — echoed back for correlation.
+  string transaction_id = 1;
+
+  // Final blended fraud score (0.0 = legitimate, 1.0 = confirmed fraud).
+  // Computed as a weighted combination of rule_score, ml_score, graph_score,
+  // and historical_score.
+  double final_score = 2;
+
+  // Score contribution from the deterministic rule engine (0.0–1.0).
+  double rule_score = 3;
+
+  // Score contribution from the ML ensemble model (0.0–1.0).
+  double ml_score = 4;
+
+  // Score contribution from graph/network analysis (0.0–1.0).
+  double graph_score = 5;
+
+  // Score contribution from historical behavioral profiling (0.0–1.0).
+  double historical_score = 6;
+
+  // Final routing decision: "APPROVE", "DECLINE", "REVIEW".
+  // Derived from final_score against configured thresholds.
+  string decision = 7;
+
+  // List of rule IDs that fired during evaluation (e.g., "VELOCITY_24H",
+  // "HIGH_RISK_MCC", "GEO_MISMATCH").
+  repeated string triggered_rules = 8;
+
+  // Anomaly flags raised by the ML model (e.g., "UNUSUAL_AMOUNT",
+  // "NEW_DEVICE", "TIME_ANOMALY").
+  repeated string anomaly_flags = 9;
+
+  // Graph patterns detected (e.g., "DEVICE_SHARING_RING",
+  // "MERCHANT_BURST", "CARD_CHAIN").
+  repeated string graph_patterns = 10;
+
+  // End-to-end scoring latency in milliseconds. Used for SLA monitoring
+  // and performance dashboards.
+  double scoring_time_ms = 11;
+
+  // Reserved for future score dimensions (e.g., behavioral biometrics).
+  reserved 12 to 15;
+}
+
+// =============================================================================
+// Decision Lookup Messages
+// =============================================================================
+
+// DecisionRequest is used to look up a previously computed fraud decision.
+message DecisionRequest {
+  // The transaction ID to look up.
+  string transaction_id = 1;
+}
+
+// FraudDecisionResponse contains the stored decision for a given transaction.
+message FraudDecisionResponse {
+  // Transaction identifier.
+  string transaction_id = 1;
+
+  // The fraud decision: "APPROVE", "DECLINE", or "REVIEW".
+  string decision = 2;
+
+  // The final fraud score at the time of decision.
+  double score = 3;
+
+  // Timestamp when the decision was recorded.
+  google.protobuf.Timestamp timestamp = 4;
+}
+
+// =============================================================================
+// Health Check Messages
+// =============================================================================
+
+// HealthRequest is an empty message used to invoke health check RPCs.
+// Follows the gRPC Health Checking Protocol pattern.
+message HealthRequest {}
+
+// HealthResponse provides service health metadata.
+message HealthResponse {
+  // Service health status: "SERVING", "NOT_SERVING", "UNKNOWN".
+  string status = 1;
+
+  // Canonical service name (e.g., "fraud-scoring-service").
+  string service = 2;
+
+  // Semantic version of the deployed service (e.g., "1.4.2").
+  string version = 3;
+
+  // Timestamp of the health check response.
+  google.protobuf.Timestamp timestamp = 4;
+}

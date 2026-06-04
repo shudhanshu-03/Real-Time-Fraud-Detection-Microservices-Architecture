@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: case-management
+  namespace: fraud-platform
+  labels:
+    app: case-management
+    component: management
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: case-management
+      component: management
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: case-management
+        component: management
+    spec:
+      containers:
+        - name: case-management
+          image: fraud-platform/case-management:latest
+          ports:
+            - containerPort: 8007
+          envFrom:
+            - configMapRef:
+                name: platform-config
+            - secretRef:
+                name: platform-secrets
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8007
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8007
+            initialDelaySeconds: 10
+            periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: case-management
+  namespace: fraud-platform
+  labels:
+    app: case-management
+    component: management
+spec:
+  type: ClusterIP
+  selector:
+    app: case-management
+    component: management
+  ports:
+    - port: 8007
+      targetPort: 8007
+      protocol: TCP

@@ -1,0 +1,182 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kafka-topics-config
+  namespace: fraud-platform
+  labels:
+    app.kubernetes.io/part-of: fraud-platform
+    app.kubernetes.io/component: kafka-configuration
+data:
+  topics.json: |
+    {
+      "topics": [
+        {
+          "name": "transaction.raw",
+          "partitions": 30,
+          "replicationFactor": 3,
+          "config": {
+            "retention.ms": "604800000"
+          }
+        },
+        {
+          "name": "transaction.validated",
+          "partitions": 30,
+          "replicationFactor": 3,
+          "config": {
+            "retention.ms": "604800000"
+          }
+        },
+        {
+          "name": "transaction.enriched",
+          "partitions": 20,
+          "replicationFactor": 3,
+          "config": {
+            "retention.ms": "604800000"
+          }
+        },
+        {
+          "name": "fraud.scoring.requests",
+          "partitions": 20,
+          "replicationFactor": 3,
+          "config": {
+            "retention.ms": "86400000"
+          }
+        },
+        {
+          "name": "fraud.scoring.results",
+          "partitions": 20,
+          "replicationFactor": 3,
+          "config": {
+            "retention.ms": "604800000"
+          }
+        },
+        {
+          "name": "fraud.alerts",
+          "partitions": 10,
+          "replicationFactor": 3,
+          "config": {
+            "retention.ms": "2592000000"
+          }
+        },
+        {
+          "name": "fraud.alerts.high-priority",
+          "partitions": 10,
+          "replicationFactor": 3,
+          "config": {
+            "retention.ms": "2592000000"
+          }
+        },
+        {
+          "name": "fraud.cases",
+          "partitions": 10,
+          "replicationFactor": 3,
+          "config": {
+            "retention.ms": "2592000000"
+          }
+        },
+        {
+          "name": "fraud.rules.updates",
+          "partitions": 5,
+          "replicationFactor": 3,
+          "config": {
+            "retention.ms": "2592000000"
+          }
+        },
+        {
+          "name": "fraud.ml.model-updates",
+          "partitions": 5,
+          "replicationFactor": 3,
+          "config": {
+            "retention.ms": "2592000000"
+          }
+        },
+        {
+          "name": "fraud.graph.updates",
+          "partitions": 10,
+          "replicationFactor": 3,
+          "config": {
+            "retention.ms": "604800000"
+          }
+        },
+        {
+          "name": "notification.email",
+          "partitions": 10,
+          "replicationFactor": 3,
+          "config": {
+            "retention.ms": "604800000"
+          }
+        },
+        {
+          "name": "notification.sms",
+          "partitions": 10,
+          "replicationFactor": 3,
+          "config": {
+            "retention.ms": "604800000"
+          }
+        },
+        {
+          "name": "notification.webhook",
+          "partitions": 10,
+          "replicationFactor": 3,
+          "config": {
+            "retention.ms": "604800000"
+          }
+        },
+        {
+          "name": "audit.events",
+          "partitions": 20,
+          "replicationFactor": 3,
+          "config": {
+            "retention.ms": "7776000000"
+          }
+        },
+        {
+          "name": "audit.access-log",
+          "partitions": 10,
+          "replicationFactor": 3,
+          "config": {
+            "retention.ms": "7776000000"
+          }
+        },
+        {
+          "name": "monitoring.metrics",
+          "partitions": 10,
+          "replicationFactor": 3,
+          "config": {
+            "retention.ms": "604800000"
+          }
+        },
+        {
+          "name": "monitoring.health",
+          "partitions": 5,
+          "replicationFactor": 3,
+          "config": {
+            "retention.ms": "86400000"
+          }
+        },
+        {
+          "name": "dlq.transaction",
+          "partitions": 10,
+          "replicationFactor": 3,
+          "config": {
+            "retention.ms": "2592000000"
+          }
+        },
+        {
+          "name": "dlq.fraud-scoring",
+          "partitions": 10,
+          "replicationFactor": 3,
+          "config": {
+            "retention.ms": "2592000000"
+          }
+        },
+        {
+          "name": "dlq.notifications",
+          "partitions": 5,
+          "replicationFactor": 3,
+          "config": {
+            "retention.ms": "2592000000"
+          }
+        }
+      ]
+    }

@@ -1,0 +1,27 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: fraud-platform
+
+resources:
+  - namespace.yaml
+  - configmaps/platform-config.yaml
+  - configmaps/kafka-topics.yaml
+  - secrets/platform-secrets.yaml
+  - services/api-gateway.yaml
+  - services/transaction-service.yaml
+  - services/fraud-orchestrator.yaml
+  - services/rule-engine.yaml
+  - services/ml-scoring.yaml
+  - services/graph-analysis.yaml
+  - services/alert-service.yaml
+  - services/case-management.yaml
+  - services/notification-service.yaml
+  - services/audit-service.yaml
+  - services/monitoring-service.yaml
+  - services/ingress.yaml
+  - hpa/transaction-service-hpa.yaml
+  - hpa/fraud-orchestrator-hpa.yaml
+
+commonLabels:
+  app.kubernetes.io/part-of: fraud-platform

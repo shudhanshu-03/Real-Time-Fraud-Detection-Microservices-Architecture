@@ -1,0 +1,47 @@
+{
+  "namespace": "com.fraudplatform.events",
+  "type": "record",
+  "name": "BaseEvent",
+  "doc": "Base event envelope schema for all domain events in the fraud detection platform. Every event published to Kafka MUST be wrapped in this envelope to ensure consistent routing, tracing, and deserialization across all consumer services.",
+  "fields": [
+    {
+      "name": "event_id",
+      "type": "string",
+      "doc": "Globally unique identifier for this event instance (UUIDv7 recommended for time-ordered lexicographic sorting)."
+    },
+    {
+      "name": "event_type",
+      "type": "string",
+      "doc": "Fully qualified event type descriptor, e.g. 'transaction.created', 'fraud.scored', 'alert.created'. Used by consumers for topic-level and schema-level routing."
+    },
+    {
+      "name": "event_version",
+      "type": "string",
+      "default": "1.0",
+      "doc": "Semantic version of this event schema. Consumers MUST handle unknown versions gracefully via forward-compatible deserialization."
+    },
+    {
+      "name": "timestamp",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      },
+      "doc": "Wall-clock time at which the event was produced, in milliseconds since Unix epoch (UTC). Used for event ordering, windowing, and late-arrival detection."
+    },
+    {
+      "name": "source_service",
+      "type": "string",
+      "doc": "Canonical name of the originating microservice, e.g. 'transaction-ingestion-service', 'scoring-engine'. Used for lineage tracking and dead-letter routing."
+    },
+    {
+      "name": "correlation_id",
+      "type": "string",
+      "doc": "Distributed tracing correlation identifier propagated across all services in a single business transaction. Maps to OpenTelemetry trace context where applicable."
+    },
+    {
+      "name": "payload",
+      "type": "bytes",
+      "doc": "Serialized domain event payload (Avro-encoded). The specific schema is determined by 'event_type' and 'event_version'. Consumers MUST resolve the payload schema from the Schema Registry before deserialization."
+    }
+  ]
+}

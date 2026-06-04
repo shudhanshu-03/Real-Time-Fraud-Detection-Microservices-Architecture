@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fraud Detection Command Center</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo-container">
+                <div class="logo-icon"></div>
+                <h1>Fraud Detection Command Center</h1>
+            </div>
+            <div class="header-controls">
+                <div class="clock" id="clock">00:00:00 UTC</div>
+                <div class="status-indicator">
+                    <span class="status-dot" id="connection-status"></span>
+                    <span id="connection-text">Live</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- KPI Cards Row -->
+        <section class="kpi-grid">
+            <div class="kpi-card" id="kpi-total">
+                <div class="kpi-header">
+                    <h3>Total Transactions</h3>
+                    <div class="kpi-icon icon-cyan"></div>
+                </div>
+                <div class="kpi-value"><span id="val-total-txn">0</span></div>
+                <div class="kpi-trend trend-up">
+                    <span>↑ 12%</span> vs last hour
+                </div>
+                <canvas class="sparkline" id="sparkline-total"></canvas>
+            </div>
+            
+            <div class="kpi-card" id="kpi-fraud">
+                <div class="kpi-header">
+                    <h3>Fraud Detected</h3>
+                    <div class="kpi-icon icon-red"></div>
+                </div>
+                <div class="kpi-value text-red"><span id="val-fraud">0</span></div>
+                <div class="kpi-trend trend-up text-red">
+                    <span id="val-fraud-rate">0.00%</span> rate
+                </div>
+                <canvas class="sparkline" id="sparkline-fraud"></canvas>
+            </div>
+            
+            <div class="kpi-card" id="kpi-alerts">
+                <div class="kpi-header">
+                    <h3>Active Alerts</h3>
+                    <div class="kpi-icon icon-amber"></div>
+                </div>
+                <div class="kpi-value text-amber"><span id="val-alerts">0</span></div>
+                <div class="severity-bar">
+                    <div class="sev-segment critical" style="width: 10%"></div>
+                    <div class="sev-segment high" style="width: 30%"></div>
+                    <div class="sev-segment medium" style="width: 40%"></div>
+                    <div class="sev-segment low" style="width: 20%"></div>
+                </div>
+            </div>
+            
+            <div class="kpi-card" id="kpi-latency">
+                <div class="kpi-header">
+                    <h3>Avg Latency</h3>
+                    <div class="kpi-icon icon-purple"></div>
+                </div>
+                <div class="kpi-value"><span id="val-latency">0</span> <span class="unit">ms</span></div>
+                <div class="kpi-trend">
+                    P99: <span id="val-p99">0</span> ms
+                </div>
+                <canvas class="sparkline" id="sparkline-latency"></canvas>
+            </div>
+        </section>
+
+        <!-- Main Content -->
+        <section class="main-grid">
+            <!-- Left: Transaction Feed -->
+            <div class="panel col-span-2">
+                <div class="panel-header">
+                    <h2>Live Transaction Feed</h2>
+                    <div class="badge">Real-time</div>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Txn ID</th>
+                                <th>Customer</th>
+                                <th>Amount</th>
+                                <th>Merchant</th>
+                                <th>Risk Score</th>
+                                <th>Decision</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transaction-feed">
+                            <!-- Rows inserted by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Right: Score Distribution -->
+            <div class="panel">
+                <div class="panel-header">
+                    <h2>Score Distribution</h2>
+                </div>
+                <div class="chart-container">
+                    <canvas id="score-chart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Second Row -->
+        <section class="main-grid split-even">
+            <!-- Alert Timeline -->
+            <div class="panel">
+                <div class="panel-header">
+                    <h2>Alert Timeline</h2>
+                </div>
+                <div class="timeline" id="alert-timeline">
+                    <!-- Alerts inserted by JS -->
+                </div>
+            </div>
+
+            <!-- Velocity Heatmap -->
+            <div class="panel">
+                <div class="panel-header">
+                    <h2>Velocity Heatmap</h2>
+                </div>
+                <div class="heatmap-container" id="velocity-heatmap">
+                    <!-- Grid inserted by JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Bottom Row: System Health -->
+        <section class="panel health-panel">
+            <div class="panel-header">
+                <h2>System Health</h2>
+            </div>
+            <div class="health-grid" id="health-grid">
+                <!-- Service health inserted by JS -->
+            </div>
+        </section>
+    </div>
+    
+    <script src="app.js"></script>
+</body>
+</html>

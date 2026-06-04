@@ -1,0 +1,195 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: fraud-platform
+
+resources:
+  - ../../base
+
+commonLabels:
+  environment: staging
+
+# ---------------------------------------------------------------------------
+# Staging overlay: moderate replicas, staging image tags
+# ---------------------------------------------------------------------------
+images:
+  - name: fraud-platform/api-gateway
+    newTag: staging
+  - name: fraud-platform/transaction-service
+    newTag: staging
+  - name: fraud-platform/fraud-orchestrator
+    newTag: staging
+  - name: fraud-platform/rule-engine
+    newTag: staging
+  - name: fraud-platform/ml-scoring
+    newTag: staging
+  - name: fraud-platform/graph-analysis
+    newTag: staging
+  - name: fraud-platform/alert-service
+    newTag: staging
+  - name: fraud-platform/case-management
+    newTag: staging
+  - name: fraud-platform/notification-service
+    newTag: staging
+  - name: fraud-platform/audit-service
+    newTag: staging
+  - name: fraud-platform/monitoring-service
+    newTag: staging
+
+patches:
+  # ── api-gateway ──────────────────────────────────────────────────────────
+  - target:
+      kind: Deployment
+      name: api-gateway
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: api-gateway
+      spec:
+        replicas: 2
+
+  # ── transaction-service ──────────────────────────────────────────────────
+  - target:
+      kind: Deployment
+      name: transaction-service
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: transaction-service
+      spec:
+        replicas: 3
+
+  # ── fraud-orchestrator ───────────────────────────────────────────────────
+  - target:
+      kind: Deployment
+      name: fraud-orchestrator
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: fraud-orchestrator
+      spec:
+        replicas: 3
+
+  # ── rule-engine ──────────────────────────────────────────────────────────
+  - target:
+      kind: Deployment
+      name: rule-engine
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: rule-engine
+      spec:
+        replicas: 2
+
+  # ── ml-scoring ───────────────────────────────────────────────────────────
+  - target:
+      kind: Deployment
+      name: ml-scoring
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: ml-scoring
+      spec:
+        replicas: 2
+
+  # ── graph-analysis ───────────────────────────────────────────────────────
+  - target:
+      kind: Deployment
+      name: graph-analysis
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: graph-analysis
+      spec:
+        replicas: 1
+
+  # ── alert-service ────────────────────────────────────────────────────────
+  - target:
+      kind: Deployment
+      name: alert-service
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: alert-service
+      spec:
+        replicas: 2
+
+  # ── case-management ──────────────────────────────────────────────────────
+  - target:
+      kind: Deployment
+      name: case-management
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: case-management
+      spec:
+        replicas: 1
+
+  # ── notification-service ─────────────────────────────────────────────────
+  - target:
+      kind: Deployment
+      name: notification-service
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: notification-service
+      spec:
+        replicas: 1
+
+  # ── audit-service ────────────────────────────────────────────────────────
+  - target:
+      kind: Deployment
+      name: audit-service
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: audit-service
+      spec:
+        replicas: 2
+
+  # ── monitoring-service ───────────────────────────────────────────────────
+  - target:
+      kind: Deployment
+      name: monitoring-service
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: monitoring-service
+      spec:
+        replicas: 1
+
+  # ── HPA adjustments for staging ──────────────────────────────────────────
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: transaction-service-hpa
+    patch: |
+      apiVersion: autoscaling/v2
+      kind: HorizontalPodAutoscaler
+      metadata:
+        name: transaction-service-hpa
+      spec:
+        minReplicas: 2
+        maxReplicas: 10
+
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: fraud-orchestrator-hpa
+    patch: |
+      apiVersion: autoscaling/v2
+      kind: HorizontalPodAutoscaler
+      metadata:
+        name: fraud-orchestrator-hpa
+      spec:
+        minReplicas: 2
+        maxReplicas: 8

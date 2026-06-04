@@ -1,0 +1,222 @@
+// =============================================================================
+// Rule Engine Service - gRPC Proto Definition
+// =============================================================================
+// Deterministic, policy-driven fraud detection subsystem. Evaluates incoming
+// transactions against a configurable set of business rules (velocity limits,
+// geographic constraints, amount thresholds, blocklists, etc.).
+//
+// Rules are evaluated in parallel with configurable priority ordering.
+// Short-circuits on critical rule matches to minimize latency.
+// =============================================================================
+
+syntax = "proto3";
+
+package fraud_platform.rules;
+
+option java_multiple_files = true;
+option java_package = "com.fraud_platform.rules";
+option go_package = "github.com/fraud-platform/proto/rules";
+
+import "google/protobuf/timestamp.proto";
+
+// =============================================================================
+// Service Definition
+// =============================================================================
+
+// RuleEngineService evaluates transactions against a managed catalog of
+// deterministic fraud detection rules. Rules are versioned and hot-reloadable
+// without service restart.
+service RuleEngineService {
+  // EvaluateRules runs the full rule catalog against a transaction and returns
+  // an aggregate rule score with individual match details.
+  // Latency target: <20ms p99 for up to 500 active rules.
+  rpc EvaluateRules(RuleEvalRequest) returns (RuleEvalResult);
+
+  // GetRuleHealth returns the health status of the rule engine, including
+  // the number of loaded rules and last reload timestamp.
+  rpc GetRuleHealth(HealthRequest) returns (HealthResponse);
+}
+
+// =============================================================================
+// Request Messages
+// =============================================================================
+
+// RuleEvalRequest encapsulates all transaction data needed for rule evaluation.
+// Embeds a lightweight transaction context rather than importing the full
+// TransactionEvent to keep the rule engine proto self-contained.
+message RuleEvalRequest {
+  // Embedded transaction context containing all fields required for rule
+  // evaluation. Kept as a separate message for clarity and future extensibility.
+  TransactionContext transaction = 1;
+
+  // Optional: restrict evaluation to a specific subset of rule IDs.
+  // When empty, all active rules are evaluated.
+  repeated string rule_ids = 2;
+
+  // Optional: maximum number of rules to evaluate before short-circuiting.
+  // 0 means no limit (evaluate all rules).
+  int32 max_rules = 3;
+
+  // Reserved for future fields (e.g., rule version pinning, dry-run mode).
+  reserved 4 to 9;
+}
+
+// TransactionContext provides the transaction attributes needed by the rule
+// engine. This is a denormalized view optimized for rule evaluation performance.
+message TransactionContext {
+  // --- Core Identifiers ------------------------------------------------------
+
+  // Globally unique transaction identifier (UUID v4).
+  string transaction_id = 1;
+
+  // Tokenized card number (PCI-compliant token, not raw PAN).
+  string card_number = 2;
+
+  // Acquiring merchant identifier.
+  string merchant_id = 3;
+
+  // Human-readable merchant display name.
+  string merchant_name = 4;
+
+  // Merchant Category Code (ISO 18245).
+  string merchant_category = 5;
+
+  // --- Financial Details -----------------------------------------------------
+
+  // Transaction amount in minor units (cents, pence, etc.).
+  double amount = 6;
+
+  // ISO 4217 currency code.
+  string currency = 7;
+
+  // Transaction timestamp from the payment gateway.
+  google.protobuf.Timestamp timestamp = 8;
+
+  // --- Channel & Device Context ----------------------------------------------
+
+  // Payment channel: "pos", "online", "mobile", "atm", "phone".
+  string channel = 9;
+
+  // Originating IP address (IPv4/IPv6).
+  string ip_address = 10;
+
+  // Persistent device identifier from client SDK.
+  string device_id = 11;
+
+  // Client-side device fingerprint hash.
+  string device_fingerprint = 12;
+
+  // --- Geolocation -----------------------------------------------------------
+
+  // Latitude of transaction origin (WGS 84).
+  double location_lat = 13;
+
+  // Longitude of transaction origin (WGS 84).
+  double location_lon = 14;
+
+  // ISO 3166-1 alpha-2 billing country code.
+  string billing_country = 15;
+
+  // ISO 3166-1 alpha-2 shipping country code.
+  string shipping_country = 16;
+
+  // --- Transaction Flags -----------------------------------------------------
+
+  // Whether this is a recurring/subscription payment.
+  bool is_recurring = 17;
+
+  // Whether this is a cross-border transaction.
+  bool is_international = 18;
+
+  // --- Extensibility ---------------------------------------------------------
+
+  // Arbitrary key-value metadata for custom rule inputs.
+  map<string, string> metadata = 19;
+
+  // Reserved for future contextual fields.
+  reserved 20 to 29;
+}
+
+// =============================================================================
+// Response Messages
+// =============================================================================
+
+// RuleEvalResult contains the aggregate output of rule evaluation, including
+// individual match details for audit and explainability.
+message RuleEvalResult {
+  // Aggregate rule score (0.0 = no rules triggered, 1.0 = maximum risk).
+  // Computed as a weighted combination of individual rule match scores.
+  double rule_score = 1;
+
+  // Ordered list of rules that matched, sorted by severity (critical first).
+  repeated RuleMatch triggered_rules = 2;
+
+  // Total rule evaluation latency in milliseconds.
+  double execution_time_ms = 3;
+
+  // Total number of rules evaluated (including those that did not match).
+  int32 rules_evaluated = 4;
+
+  // Total number of rules that matched.
+  int32 rules_matched = 5;
+
+  // Reserved for future aggregate metrics.
+  reserved 6 to 9;
+}
+
+// RuleMatch describes a single rule that was triggered during evaluation.
+// Provides enough context for human reviewers and automated downstream systems
+// to understand why the rule fired.
+message RuleMatch {
+  // Unique rule identifier (e.g., "VEL_24H_COUNT", "GEO_BILLING_MISMATCH").
+  string rule_id = 1;
+
+  // Human-readable rule name (e.g., "24-Hour Velocity Limit").
+  string rule_name = 2;
+
+  // Severity classification: "LOW", "MEDIUM", "HIGH", "CRITICAL".
+  // Drives alert routing and review prioritization.
+  string severity = 3;
+
+  // Individual risk score contribution from this rule (0.0–1.0).
+  double score = 4;
+
+  // Human-readable explanation of why this rule matched.
+  // Example: "Card used 15 times in 24h, threshold is 10."
+  string description = 5;
+
+  // Rule category for grouping in dashboards (e.g., "velocity", "geo",
+  // "amount", "blocklist", "device").
+  string category = 6;
+
+  // Reserved for future rule match metadata (e.g., matched threshold values).
+  reserved 7 to 9;
+}
+
+// =============================================================================
+// Health Check Messages
+// =============================================================================
+
+// HealthRequest is an empty message for health check invocation.
+message HealthRequest {}
+
+// HealthResponse provides service health and operational metadata.
+message HealthResponse {
+  // Service health status: "SERVING", "NOT_SERVING", "UNKNOWN".
+  string status = 1;
+
+  // Canonical service name (e.g., "rule-engine-service").
+  string service = 2;
+
+  // Semantic version of the deployed service (e.g., "2.1.0").
+  string version = 3;
+
+  // Timestamp of the health check response.
+  google.protobuf.Timestamp timestamp = 4;
+
+  // Number of rules currently loaded in the engine.
+  int32 loaded_rules = 5;
+
+  // Timestamp of the last successful rule catalog reload.
+  google.protobuf.Timestamp last_reload = 6;
+}

@@ -1,0 +1,192 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap');
+
+:root {
+  /* Core Colors */
+  --bg-dark: 222 47% 11%;
+  --bg-surface: 222 47% 15%;
+  --primary: 252 80% 65%; /* Vibrant Purple */
+  --secondary: 190 90% 50%; /* Neon Cyan */
+  --accent-red: 350 80% 60%; /* Alert Red */
+  --accent-orange: 30 90% 55%; /* Warning Orange */
+  --accent-green: 150 70% 45%; /* Success Green */
+  
+  /* Text */
+  --text-main: 210 40% 98%;
+  --text-muted: 215 20% 65%;
+  
+  /* Glassmorphism */
+  --glass-bg: rgba(30, 33, 43, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-highlight: rgba(255, 255, 255, 0.12);
+  
+  /* Fonts */
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-display: 'Outfit', 'Inter', system-ui, sans-serif;
+  
+  /* Spacing & Radii */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: hsl(var(--bg-dark));
+  color: hsl(var(--text-main));
+  min-height: 100vh;
+  /* Ambient glow background */
+  background-image: 
+    radial-gradient(circle at 15% 50%, rgba(116, 66, 255, 0.08), transparent 25%),
+    radial-gradient(circle at 85% 30%, rgba(0, 225, 255, 0.05), transparent 25%);
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+/* Glass Panel Utility */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+}
+
+.glass-panel:hover {
+  border-color: var(--glass-highlight);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+}
+
+/* Animations */
+@keyframes pulseGlow {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Layout Utilities */
+.dashboard-container {
+  display: grid;
+  grid-template-columns: 280px 1fr 350px;
+  grid-template-rows: 80px 1fr;
+  gap: 24px;
+  padding: 24px;
+  min-height: 100vh;
+  max-width: 1800px;
+  margin: 0 auto;
+}
+
+.topbar {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 24px;
+  z-index: 10;
+}
+
+.sidebar-left {
+  grid-column: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.main-content {
+  grid-column: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.sidebar-right {
+  grid-column: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--glass-border);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--glass-highlight);
+}
+
+/* Typography Utilities */
+.text-gradient {
+  background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-muted {
+  color: hsl(var(--text-muted));
+}
+
+.text-sm {
+  font-size: 0.875rem;
+}
+
+.text-lg {
+  font-size: 1.125rem;
+}
+
+.text-xl {
+  font-size: 1.25rem;
+}
+
+.text-2xl {
+  font-size: 1.5rem;
+}
+
+.font-medium {
+  font-weight: 500;
+}
+
+.font-bold {
+  font-weight: 700;
+}
+
+/* Flex Utilities */
+.flex { display: flex; }
+.flex-col { display: flex; flex-direction: column; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.justify-center { justify-content: center; }
+.gap-2 { gap: 8px; }
+.gap-4 { gap: 16px; }
+.gap-6 { gap: 24px; }

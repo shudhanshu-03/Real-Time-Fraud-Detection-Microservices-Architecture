@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: platform-config
+  namespace: fraud-platform
+  labels:
+    app.kubernetes.io/part-of: fraud-platform
+    app.kubernetes.io/component: configuration
+data:
+  KAFKA_BOOTSTRAP_SERVERS: kafka.fraud-platform.svc.cluster.local:9092
+  REDIS_HOST: redis.fraud-platform.svc.cluster.local
+  REDIS_PORT: "6379"
+  PG_HOST: postgres.fraud-platform.svc.cluster.local
+  PG_PORT: "5432"
+  PG_DATABASE: fraud_transactions
+  PG_USER: fraud_user
+  ES_HOSTS: http://elasticsearch.fraud-platform.svc.cluster.local:9200
+  NEO4J_URI: bolt://neo4j.fraud-platform.svc.cluster.local:7687
+  LOG_LEVEL: INFO
+  ENVIRONMENT: production

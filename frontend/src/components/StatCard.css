@@ -1,0 +1,52 @@
+.stat-card {
+  position: relative;
+  padding: 20px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  color: hsl(var(--primary));
+}
+
+.mb-4 {
+  margin-bottom: 16px;
+}
+
+.change-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.change-badge.positive {
+  background: rgba(16, 185, 129, 0.15);
+  color: hsl(var(--accent-green));
+}
+
+.change-badge.negative {
+  background: rgba(239, 68, 68, 0.15);
+  color: hsl(var(--accent-red));
+}
+
+.stat-glow {
+  position: absolute;
+  bottom: -20px;
+  right: -20px;
+  width: 100px;
+  height: 100px;
+  background: radial-gradient(circle, rgba(116, 66, 255, 0.2) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}

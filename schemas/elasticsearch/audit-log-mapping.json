@@ -1,0 +1,245 @@
+{
+  "_doc_comment": [
+    "=======================================================================",
+    " Elasticsearch Index Template: Audit Logs",
+    " ",
+    " Purpose: Provides immutable, searchable audit trail for all system",
+    " and user actions across the fraud detection platform. Supports",
+    " regulatory compliance (PCI DSS 10.x, SOX, GDPR Article 30),",
+    " security forensics, and operational troubleshooting.",
+    " ",
+    " Lifecycle: Managed by ILM policy 'audit-log-policy'",
+    "   - Hot phase:   0-30 days   (primary shards, force merge at 1 segment)",
+    "   - Warm phase:  30-90 days  (shrink to 1 shard, readonly)",
+    "   - Cold phase:  90-365 days (searchable snapshot, frozen tier)",
+    "   - Delete:      after 7 years (2,555 days) per regulatory retention",
+    " ",
+    " ILM Policy Definition (apply separately via PUT _ilm/policy/audit-log-policy):",
+    " {",
+    "   \"policy\": {",
+    "     \"phases\": {",
+    "       \"hot\": {",
+    "         \"min_age\": \"0ms\",",
+    "         \"actions\": {",
+    "           \"rollover\": {",
+    "             \"max_primary_shard_size\": \"50gb\",",
+    "             \"max_age\": \"30d\"",
+    "           },",
+    "           \"set_priority\": { \"priority\": 100 },",
+    "           \"forcemerge\": { \"max_num_segments\": 1 }",
+    "         }",
+    "       },",
+    "       \"warm\": {",
+    "         \"min_age\": \"90d\",",
+    "         \"actions\": {",
+    "           \"shrink\": { \"number_of_shards\": 1 },",
+    "           \"allocate\": { \"number_of_replicas\": 1 },",
+    "           \"set_priority\": { \"priority\": 50 },",
+    "           \"readonly\": {}",
+    "         }",
+    "       },",
+    "       \"cold\": {",
+    "         \"min_age\": \"365d\",",
+    "         \"actions\": {",
+    "           \"set_priority\": { \"priority\": 0 },",
+    "           \"searchable_snapshot\": {",
+    "             \"snapshot_repository\": \"audit-snapshots\"",
+    "           },",
+    "           \"allocate\": {",
+    "             \"number_of_replicas\": 0",
+    "           }",
+    "         }",
+    "       },",
+    "       \"delete\": {",
+    "         \"min_age\": \"2555d\",",
+    "         \"actions\": {",
+    "           \"delete\": {}",
+    "         }",
+    "       }",
+    "     }",
+    "   }",
+    " }",
+    "======================================================================="
+  ],
+  "index_patterns": ["audit-logs-*"],
+  "template": {
+    "settings": {
+      "index": {
+        "number_of_shards": 5,
+        "number_of_replicas": 1,
+        "lifecycle": {
+          "name": "audit-log-policy",
+          "rollover_alias": "audit-logs"
+        },
+        "codec": "best_compression",
+        "refresh_interval": "5s",
+        "sort": {
+          "field": ["timestamp"],
+          "order": ["desc"]
+        },
+        "mapping": {
+          "total_fields": {
+            "limit": 2000
+          }
+        }
+      }
+    },
+    "mappings": {
+      "dynamic": "strict",
+      "_source": {
+        "enabled": true
+      },
+      "properties": {
+        "event_id": {
+          "type": "keyword",
+          "doc_values": true,
+          "ignore_above": 128
+        },
+        "timestamp": {
+          "type": "date",
+          "format": "strict_date_optional_time||epoch_millis"
+        },
+        "service": {
+          "type": "keyword",
+          "doc_values": true,
+          "ignore_above": 256
+        },
+        "action": {
+          "type": "keyword",
+          "doc_values": true,
+          "ignore_above": 256,
+          "_meta": {
+            "examples": [
+              "transaction.created",
+              "transaction.scored",
+              "alert.created",
+              "alert.assigned",
+              "alert.resolved",
+              "alert.escalated",
+              "rule.created",
+              "rule.updated",
+              "rule.enabled",
+              "rule.disabled",
+              "model.deployed",
+              "model.rollback",
+              "user.login",
+              "user.logout",
+              "config.changed",
+              "case.opened",
+              "case.closed"
+            ]
+          }
+        },
+        "entity_type": {
+          "type": "keyword",
+          "doc_values": true,
+          "ignore_above": 128,
+          "_meta": {
+            "description": "Type of the primary entity affected by this action",
+            "examples": [
+              "transaction",
+              "alert",
+              "case",
+              "rule",
+              "model",
+              "account",
+              "user",
+              "config"
+            ]
+          }
+        },
+        "entity_id": {
+          "type": "keyword",
+          "doc_values": true,
+          "ignore_above": 256
+        },
+        "actor_id": {
+          "type": "keyword",
+          "doc_values": true,
+          "ignore_above": 256
+        },
+        "actor_type": {
+          "type": "keyword",
+          "doc_values": true,
+          "ignore_above": 64,
+          "_meta": {
+            "allowed_values": ["user", "system", "service"],
+            "description": "Classification of the entity performing the action: 'user' for human operators, 'system' for automated platform actions, 'service' for inter-service operations"
+          }
+        },
+        "ip_address": {
+          "type": "ip"
+        },
+        "user_agent": {
+          "type": "text",
+          "analyzer": "standard",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 512
+            }
+          }
+        },
+        "changes": {
+          "type": "object",
+          "enabled": false,
+          "_meta": {
+            "description": "Flexible schema for before/after state changes. Structure varies by action type. Indexing disabled to support arbitrary nested structures without mapping explosion."
+          }
+        },
+        "metadata": {
+          "type": "object",
+          "enabled": false,
+          "_meta": {
+            "description": "Arbitrary key-value metadata associated with the audit event. Stored but not indexed to prevent mapping explosion from unpredictable keys."
+          }
+        },
+        "correlation_id": {
+          "type": "keyword",
+          "doc_values": true,
+          "ignore_above": 128
+        },
+        "request_id": {
+          "type": "keyword",
+          "doc_values": true,
+          "ignore_above": 128
+        },
+        "description": {
+          "type": "text",
+          "analyzer": "standard",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 1024
+            }
+          }
+        },
+        "severity": {
+          "type": "keyword",
+          "doc_values": true,
+          "ignore_above": 32,
+          "_meta": {
+            "allowed_values": ["info", "low", "medium", "high", "critical"]
+          }
+        },
+        "result": {
+          "type": "keyword",
+          "doc_values": true,
+          "ignore_above": 32,
+          "_meta": {
+            "allowed_values": ["success", "failure"]
+          }
+        }
+      }
+    }
+  },
+  "priority": 200,
+  "version": 1,
+  "_meta": {
+    "description": "Composable index template for fraud detection platform audit logs",
+    "managed_by": "fraud-platform-infra",
+    "compliance": ["PCI-DSS-10", "SOX", "GDPR-Art30"],
+    "data_retention": "7 years",
+    "owner": "platform-engineering"
+  }
+}

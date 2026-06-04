@@ -1,0 +1,218 @@
+// =============================================================================
+// Graph Analysis Service - gRPC Proto Definition
+// =============================================================================
+// Network/graph-based fraud detection subsystem. Maintains a real-time
+// transaction graph (cards ↔ devices ↔ merchants ↔ IPs) and detects
+// structural fraud patterns such as device-sharing rings, card chains,
+// merchant collusion clusters, and rapid fan-out attacks.
+//
+// Backed by a graph database (e.g., Neo4j, JanusGraph) with an in-memory
+// subgraph cache for low-latency neighborhood traversals.
+// =============================================================================
+
+syntax = "proto3";
+
+package fraud_platform.graph;
+
+option java_multiple_files = true;
+option java_package = "com.fraud_platform.graph";
+option go_package = "github.com/fraud-platform/proto/graph";
+
+import "google/protobuf/timestamp.proto";
+
+// =============================================================================
+// Service Definition
+// =============================================================================
+
+// GraphAnalysisService performs real-time and batch graph-based fraud analysis.
+// It maintains an evolving transaction graph and exposes pattern detection
+// capabilities over the graph topology.
+service GraphAnalysisService {
+  // AnalyzeGraph performs a targeted neighborhood analysis around the entities
+  // involved in a specific transaction. Returns a graph-based risk score and
+  // any structural patterns detected in the local subgraph.
+  // Latency target: <40ms p99 for 2-hop neighborhood traversals.
+  rpc AnalyzeGraph(GraphAnalysisRequest) returns (GraphAnalysisResult);
+
+  // DetectPatterns performs a broader, more compute-intensive pattern scan
+  // across the transaction graph. May examine multi-hop paths and community
+  // structures. Suitable for near-real-time or batch processing use cases.
+  rpc DetectPatterns(GraphAnalysisRequest) returns (GraphAnalysisResult);
+
+  // GetGraphHealth returns the health status of the graph analysis service,
+  // including graph database connectivity and cache statistics.
+  rpc GetGraphHealth(HealthRequest) returns (HealthResponse);
+}
+
+// =============================================================================
+// Request Messages
+// =============================================================================
+
+// GraphAnalysisRequest provides the entity identifiers and transaction context
+// needed to perform a graph neighborhood analysis. The service uses these
+// identifiers to locate the relevant nodes in the transaction graph and
+// traverse their connections.
+message GraphAnalysisRequest {
+  // --- Entity Identifiers (graph node keys) ----------------------------------
+
+  // Transaction identifier — used to correlate results back to the scoring
+  // pipeline and to add the transaction as a new edge in the graph.
+  string transaction_id = 1;
+
+  // Tokenized card number — primary entity node in the graph.
+  string card_number = 2;
+
+  // Merchant identifier — connected to the card via this transaction edge.
+  string merchant_id = 3;
+
+  // Device identifier — linked to the card; shared devices form rings.
+  string device_id = 4;
+
+  // IP address — linked to the device; shared IPs indicate proxied traffic.
+  string ip_address = 5;
+
+  // --- Transaction Context ---------------------------------------------------
+
+  // Transaction amount — used for amount-based pattern detection (e.g.,
+  // structuring, micro-transactions followed by large withdrawals).
+  double amount = 6;
+
+  // Transaction timestamp — used for temporal pattern analysis
+  // (e.g., burst detection, time-ordered traversals).
+  google.protobuf.Timestamp timestamp = 7;
+
+  // --- Analysis Configuration ------------------------------------------------
+
+  // Maximum traversal depth (number of hops from the seed entities).
+  // Default: 2. Higher values increase latency but find broader patterns.
+  int32 max_depth = 8;
+
+  // Maximum number of patterns to return. 0 means no limit.
+  int32 max_patterns = 9;
+
+  // --- Extensibility ---------------------------------------------------------
+
+  // Additional context for graph enrichment and custom pattern matching.
+  // Examples: "account_age_days", "email_domain", "phone_hash".
+  map<string, string> additional_context = 10;
+
+  // Reserved for future analysis parameters.
+  reserved 11 to 15;
+}
+
+// =============================================================================
+// Response Messages
+// =============================================================================
+
+// GraphAnalysisResult contains the output of a graph-based fraud analysis,
+// including a risk score, detected patterns, and connectivity metrics.
+message GraphAnalysisResult {
+  // Graph-derived risk score (0.0 = clean topology, 1.0 = high-risk structure).
+  // Based on the density, connectivity, and known-fraud proximity of the
+  // local subgraph.
+  double graph_score = 1;
+
+  // Structural patterns detected in the transaction graph neighborhood.
+  // Ordered by confidence (highest first).
+  repeated GraphPattern patterns = 2;
+
+  // Human-readable risk factor descriptions summarizing the key findings.
+  // Examples: "Card shares device with 3 flagged cards",
+  //           "IP associated with known fraud ring".
+  repeated string risk_factors = 3;
+
+  // Number of distinct entities (nodes) found in the traversed subgraph.
+  // High counts may indicate a dense fraud network.
+  int32 connected_entities = 4;
+
+  // Graph analysis latency in milliseconds (includes traversal and
+  // pattern matching, excludes network overhead).
+  double analysis_time_ms = 5;
+
+  // Number of edges traversed during the analysis.
+  int32 edges_traversed = 6;
+
+  // Depth achieved during traversal (may be less than max_depth if the
+  // subgraph is sparse).
+  int32 traversal_depth = 7;
+
+  // Reserved for future graph metrics (e.g., community IDs, centrality scores).
+  reserved 8 to 11;
+}
+
+// GraphPattern describes a specific structural pattern detected in the
+// transaction graph. Patterns are the primary explainability mechanism for
+// graph-based risk scores.
+message GraphPattern {
+  // Pattern type classifier. Standard types include:
+  //   "DEVICE_SHARING_RING"   — multiple cards used from the same device
+  //   "CARD_CHAIN"            — sequential card usage across linked devices
+  //   "MERCHANT_BURST"        — unusual transaction volume at a merchant
+  //   "IP_CLUSTER"            — many cards transacting from the same IP
+  //   "RAPID_FAN_OUT"         — single card used at many merchants quickly
+  //   "ACCOUNT_TAKEOVER"      — sudden device/IP change for established card
+  //   "COLLUSION_CLUSTER"     — tightly connected merchant-device-card group
+  //   "STRUCTURING"           — amounts split to avoid thresholds
+  string pattern_type = 1;
+
+  // Human-readable description of the detected pattern instance.
+  // Example: "Card ending 4532 shares device D-8a3f with 4 other cards,
+  // 2 of which have confirmed fraud."
+  string description = 2;
+
+  // Severity classification: "LOW", "MEDIUM", "HIGH", "CRITICAL".
+  string severity = 3;
+
+  // Confidence score for this pattern detection (0.0–1.0).
+  double confidence = 4;
+
+  // List of entity identifiers involved in this pattern.
+  // May include card tokens, device IDs, merchant IDs, and IP addresses.
+  repeated string involved_entities = 5;
+
+  // Number of edges in the pattern subgraph.
+  int32 edge_count = 6;
+
+  // Earliest timestamp of a transaction involved in this pattern.
+  google.protobuf.Timestamp first_seen = 7;
+
+  // Most recent timestamp of a transaction involved in this pattern.
+  google.protobuf.Timestamp last_seen = 8;
+
+  // Reserved for future pattern metadata (e.g., visualization data).
+  reserved 9 to 12;
+}
+
+// =============================================================================
+// Health Check Messages
+// =============================================================================
+
+// HealthRequest is an empty message for health check invocation.
+message HealthRequest {}
+
+// HealthResponse provides service health and operational metadata.
+message HealthResponse {
+  // Service health status: "SERVING", "NOT_SERVING", "UNKNOWN".
+  string status = 1;
+
+  // Canonical service name (e.g., "graph-analysis-service").
+  string service = 2;
+
+  // Semantic version of the deployed service.
+  string version = 3;
+
+  // Timestamp of the health check response.
+  google.protobuf.Timestamp timestamp = 4;
+
+  // Total number of nodes currently in the graph.
+  int64 total_nodes = 5;
+
+  // Total number of edges currently in the graph.
+  int64 total_edges = 6;
+
+  // Graph database connection status: "CONNECTED", "DISCONNECTED", "DEGRADED".
+  string graph_db_status = 7;
+
+  // In-memory cache hit rate (0.0–1.0) for subgraph lookups.
+  double cache_hit_rate = 8;
+}
